@@ -3,6 +3,17 @@
 
 GLOBAL_TRANSLATIONS = {
     'en': {
+
+        'window_info.panel_title': 'Window Source',
+        'window_info.title': 'Window Title',
+        'window_info.handle': 'Handle / PID',
+        'window_info.bounds': 'Bounds',
+        'window_info.status': 'Status',
+        'window_info.reselect': 'Reselect Window',
+        'window_info.connected': 'CONNECTED',
+        'window_info.lost': 'LOST',
+        'window_info.not_selected': 'NOT_SELECTED',
+
         'icon_btn.disabled_action': 'Cannot {action} at this time',
         'icon_btn.not_available': 'Not available',
         'help_hunt_title': '1. Hunt Screen Reminders',
@@ -1387,6 +1398,16 @@ GLOBAL_TRANSLATIONS = {
         'window_selection': 'Chọn cửa sổ',
         'window_status_label': 'Trạng thái cửa sổ',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
+        'window_info.panel_title': 'Nguồn Cửa Sổ (Window Source)',
+        'window_info.title': 'Tên cửa sổ',
+        'window_info.handle': 'Handle / PID',
+        'window_info.bounds': 'Tọa độ',
+        'window_info.status': 'Trạng thái',
+        'window_info.reselect': 'Chọn lại cửa sổ',
+        'window_info.connected': 'CONNECTED',
+        'window_info.lost': 'LOST',
+        'window_info.not_selected': 'NOT_SELECTED',
+
 
     }
 }

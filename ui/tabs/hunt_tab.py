@@ -4,6 +4,7 @@ from lib.ui_style_v2 import UIStyleV2 as UI
 from ui.helpers import UIHelper
 
 from ui.components.base.responsive_grid_base import ResponsiveGridBase
+from ui.components.window_info_panel import WindowInfoPanel
 from lib.features.monsters.monster_repo import get_target_monster_info
 from ui.panels.skill_panel import SkillPanel
 import os
@@ -112,6 +113,10 @@ class HuntTab(ttk.Frame):
         self.paned_window.add(self.right_scroll_container, weight=42)
 
         # Stack panels inside the columns
+        # Window Source Panel
+        self.window_info_panel = WindowInfoPanel(self.left_col_frame, self.app, scale_factor)
+        self.window_info_panel.pack(side=tk.TOP, fill=tk.X, expand=False, pady=(0, UI.SPACE_MD))
+
         from ui.panels.monster_target_panel import MonsterTargetPanel
         self.monster_target_panel = MonsterTargetPanel(
             self.left_col_frame,
