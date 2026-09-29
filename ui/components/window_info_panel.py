@@ -114,19 +114,14 @@ class WindowInfoPanel(ttk.LabelFrame):
             return
 
         hunt_selected = self.app.state_controller.hunt_selected
-        is_hunting = False
-        try:
-            is_hunting = bool(self.app.state_controller.get_ui_var('is_hunting'))
-        except Exception:
-            pass
 
         if not hunt_selected:
-            UIDispatcher.post(lambda: self._update_ui_state(None, None, is_hunting))
+            UIDispatcher.post(lambda: self._update_ui_state(None, None, hunt_selected))
             return
 
         hwnd = hunt_selected.get("hwnd")
         if not hwnd:
-            UIDispatcher.post(lambda: self._update_ui_state(None, None, is_hunting))
+            UIDispatcher.post(lambda: self._update_ui_state(None, None, hunt_selected))
             return
 
         hwnd = int(hwnd)
@@ -139,12 +134,12 @@ class WindowInfoPanel(ttk.LabelFrame):
             is_valid = True
 
         if not is_valid:
-            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, is_hunting, hunt_selected))
+            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, hunt_selected))
             return
 
         info = wm.get_window_info(hwnd)
         if not info:
-            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, is_hunting, hunt_selected))
+            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, hunt_selected))
             return
 
         # Update thumbnail
@@ -174,11 +169,18 @@ class WindowInfoPanel(ttk.LabelFrame):
             except Exception as e:
                 logger.debug(f"[WindowInfoPanel] Capture failed: {e}")
 
-        UIDispatcher.post(lambda: self._update_ui_state("CONNECTED", info, is_hunting, hunt_selected, thumbnail_img))
+        UIDispatcher.post(lambda: self._update_ui_state("CONNECTED", info, hunt_selected, thumbnail_img))
 
-    def _update_ui_state(self, status, info, is_hunting, hunt_selected=None, thumbnail_img=None):
+    def _update_ui_state(self, status, info, hunt_selected=None, thumbnail_img=None):
         if self.is_destroyed:
             return
+
+        is_hunting = False
+        try:
+            if hasattr(self.app, "state_controller"):
+                is_hunting = bool(self.app.state_controller.get_ui_var('is_hunting'))
+        except Exception:
+            pass
 
         if status == "CONNECTED" and info:
             self.lbl_title_val.config(text=info.title)
