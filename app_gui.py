@@ -932,47 +932,6 @@ class App:
         if hasattr(self.state_controller, "hunt_cfg"):
             self.hotkey_controller.register_all()
 
-    # --- Helpers to attempt closing other windows while respecting unsaved changes ---
-
-
-        is_running = self.state_controller.is_bot_running()
-        if is_running:
-            text = self._t("stop_hunt")
-            tooltip = self._t("stop_hunt") + "\n(Ctrl+F6)"
-            bg_color = UI.DANGER
-        else:
-            text = self._t("start_hunt")
-            tooltip = self._t("start_hunt") + "\n(Ctrl+F5)"
-            bg_color = UI.ACCENT_GREEN
-
-        if hasattr(self.start_stop_btn, "set_text"):
-            self.start_stop_btn.set_text(text)
-            self.start_stop_btn.set_tooltip(tooltip)
-            # Custom component coloring would rely on button_type typically,
-            # but we can fallback to config if needed. We assume custom wrapper might support bg configure.
-            try:
-                self.start_stop_btn.config(bg=bg_color)
-            except Exception:
-                pass
-        else:
-            self.start_stop_btn.config(text=text, bg=bg_color)
-
-
-
-        self._action_locked = True
-
-        # Debounce: Disable button while state transition resolves
-        if hasattr(self.start_stop_btn, "configure"):
-            self.start_stop_btn.configure(state="disabled")
-        elif hasattr(self.start_stop_btn, "config"):
-            self.start_stop_btn.config(state="disabled")
-
-
-
-        self.task_scheduler.schedule_task("reenable_start_stop_btn", 500, self.hunt_controller.reenable_start_stop_btn if hasattr(self, 'hunt_controller') else None, recurring=False)
-
-
-
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
             self.state_controller.set_ui_var('is_hunting', True)
