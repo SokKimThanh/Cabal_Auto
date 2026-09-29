@@ -1,13 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
-import threading
 import time
 import logging
 import cv2
 import sys
 
 from lib.ui_style_v2 import UIStyleV2 as UI
-from lib.events.ui_dispatcher import UIDispatcher
 from lib.system.window_manager import WindowManager
 
 try:
@@ -98,16 +96,19 @@ class WindowInfoPanel(ttk.LabelFrame):
             self.app.window_controller.on_hunt_find_windows()
 
     def _start_loop(self):
-        self._loop_thread = threading.Thread(target=self._loop_worker, daemon=True)
-        self._loop_thread.start()
+        if not self.is_destroyed and self.winfo_exists():
+            self._loop_worker()
 
     def _loop_worker(self):
-        while not self.is_destroyed:
-            try:
-                self._update_info()
-            except Exception as e:
-                logger.error(f"[WindowInfoPanel] Error in update loop: {e}")
-            time.sleep(1.0)
+        if self.is_destroyed or not self.winfo_exists():
+            return
+        try:
+            self._update_info()
+        except Exception as e:
+            logger.error(f"[WindowInfoPanel] Error in update loop: {e}")
+
+        if not self.is_destroyed and self.winfo_exists():
+            self.after(1000, self._loop_worker)
 
     def _update_info(self):
         if not hasattr(self.app, "state_controller"):
@@ -116,12 +117,12 @@ class WindowInfoPanel(ttk.LabelFrame):
         hunt_selected = self.app.state_controller.hunt_selected
 
         if not hunt_selected:
-            UIDispatcher.post(lambda: self._update_ui_state(None, None, hunt_selected))
+            self._update_ui_state(None, None, hunt_selected)
             return
 
         hwnd = hunt_selected.get("hwnd")
         if not hwnd:
-            UIDispatcher.post(lambda: self._update_ui_state(None, None, hunt_selected))
+            self._update_ui_state(None, None, hunt_selected)
             return
 
         hwnd = int(hwnd)
@@ -134,12 +135,12 @@ class WindowInfoPanel(ttk.LabelFrame):
             is_valid = True
 
         if not is_valid:
-            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, hunt_selected))
+            self._update_ui_state("LOST", None, hunt_selected)
             return
 
         info = wm.get_window_info(hwnd)
         if not info:
-            UIDispatcher.post(lambda: self._update_ui_state("LOST", None, hunt_selected))
+            self._update_ui_state("LOST", None, hunt_selected)
             return
 
         # Update thumbnail
@@ -155,7 +156,7 @@ class WindowInfoPanel(ttk.LabelFrame):
                         self._last_hwnd = hwnd
 
                 if self._screen_capture is not None:
-                    frame = self._screen_capture.get_frame(timeout=0.1)
+                    frame = self._screen_capture.get_frame(timeout=0.0)
                 else:
                     frame = None
 
@@ -169,7 +170,7 @@ class WindowInfoPanel(ttk.LabelFrame):
             except Exception as e:
                 logger.debug(f"[WindowInfoPanel] Capture failed: {e}")
 
-        UIDispatcher.post(lambda: self._update_ui_state("CONNECTED", info, hunt_selected, thumbnail_img))
+        self._update_ui_state("CONNECTED", info, hunt_selected, thumbnail_img)
 
     def _update_ui_state(self, status, info, hunt_selected=None, thumbnail_img=None):
         if self.is_destroyed:
