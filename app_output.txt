@@ -1,0 +1,37 @@
+2026-09-29 11:21:52 | root | INFO     | ============================================================
+2026-09-29 11:21:52 | root | INFO     | Logging system initialized
+2026-09-29 11:21:52 | root | INFO     | Log directory: /app/logs
+2026-09-29 11:21:52 | root | INFO     | Log level: INFO
+2026-09-29 11:21:52 | root | INFO     | ============================================================
+2026-09-29 11:21:52 | lib.system.screen_capture | INFO     | [Capture] dxcam không có sẵn, dùng BitBlt backend
+2026-09-29 11:21:52 | lib.i18n | INFO     | [i18n] Auto-synced 1 namespaces to the database.
+2026-09-29 11:21:52 | lib.i18n | INFO     | [i18n] Successfully hydrated 1420 translations from database.
+[Vision Menu] Created successfully
+2026-09-29 11:21:52 | lib.vision.template_loader | INFO     | Loaded 4 templates from config
+2026-09-29 11:21:52 | lib.vision.vision_engine | INFO     | VisionEngine initialized with 4 templates
+2026-09-29 11:21:52 | ui.views.icon_manager_frame | INFO     | UI Tree Build Diagnostics: Registered: 37, Mapped: 12, Unmapped: 25, Unregistered/Dangling: 0
+2026-09-29 11:21:54 | lib.system.window_manager | INFO     | WindowManager initialized
+2026-09-29 11:21:54 | lib.system.window_manager | ERROR    | EnumWindows failed: window_manager requires Windows + pywin32; install with `pip install pywin32`.
+2026-09-29 11:21:54 | lib.system.window_manager | INFO     | WindowManager initialized
+2026-09-29 11:21:54 | lib.system.window_manager | ERROR    | EnumWindows failed: window_manager requires Windows + pywin32; install with `pip install pywin32`.
+Failed to register start hotkey 'ctrl+shift+r': You must be root to use this library on linux.
+Failed to register stop hotkey 'ctrl+shift+e': You must be root to use this library on linux.
+Failed to register library hotkey 'ctrl+shift+l': You must be root to use this library on linux.
+Failed to register vision hotkey 'ctrl+shift+v': You must be root to use this library on linux.
+Failed to register monster editor hotkey 'ctrl+shift+m': You must be root to use this library on linux.
+Failed to register build manager hotkey 'ctrl+b': You must be root to use this library on linux.
+Failed to register add template hotkey 'ctrl+shift+t': You must be root to use this library on linux.
+Some hotkeys failed to register: {'ctrl+shift+r': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+e': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+l': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+v': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+m': "ImportError('You must be root to use this library on linux.')", 'ctrl+b': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+t': "ImportError('You must be root to use this library on linux.')"}
+2026-09-29 11:21:54 | lib.i18n | INFO     | [i18n] Auto-synced 2 namespaces to the database.
+2026-09-29 11:21:54 | lib.i18n | INFO     | [i18n] Successfully hydrated 1420 translations from database.
+Failed to register start hotkey 'ctrl+shift+r': You must be root to use this library on linux.
+Failed to register stop hotkey 'ctrl+shift+e': You must be root to use this library on linux.
+Failed to register library hotkey 'ctrl+shift+l': You must be root to use this library on linux.
+Failed to register vision hotkey 'ctrl+shift+v': You must be root to use this library on linux.
+Failed to register monster editor hotkey 'ctrl+shift+m': You must be root to use this library on linux.
+Failed to register build manager hotkey 'ctrl+b': You must be root to use this library on linux.
+Failed to register add template hotkey 'ctrl+shift+t': You must be root to use this library on linux.
+Some hotkeys failed to register: {'ctrl+shift+r': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+e': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+l': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+v': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+m': "ImportError('You must be root to use this library on linux.')", 'ctrl+b': "ImportError('You must be root to use this library on linux.')", 'ctrl+shift+t': "ImportError('You must be root to use this library on linux.')"}
+2026-09-29 11:21:54 | lib.vision.template_loader | INFO     | Loaded 4 templates from config
+2026-09-29 11:21:54 | lib.vision.vision_engine | INFO     | VisionEngine initialized with 4 templates
+2026-09-29 11:21:54 | lib.system.bot_manager | INFO     | [BotManager] Initialized

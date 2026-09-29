@@ -108,6 +108,9 @@ def test_hotkey_controller_on_library_manager():
     controller = HotkeyController(parent, {})
     controller.on_library_manager()
 
-    parent.after.assert_called_once_with(
-        0, parent.library_manager_controller.open_library_manager
-    )
+    assert parent.after.call_count == 1
+    args, kwargs = parent.after.call_args
+    assert args[0] == 0
+    # execute the lambda/function passed to after
+    args[1]()
+    parent.library_manager_controller.open_library_manager.assert_called_once()
