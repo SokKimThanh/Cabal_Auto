@@ -3,6 +3,15 @@
 
 GLOBAL_TRANSLATIONS = {
     'en': {
+        'window_info.panel_title': 'Window Source',
+        'window_info.title': 'Window Title',
+        'window_info.handle': 'Handle / PID',
+        'window_info.bounds': 'Bounds',
+        'window_info.status': 'Status',
+        'window_info.reselect': 'Reselect Window',
+        'window_info.connected': 'CONNECTED',
+        'window_info.lost': 'LOST',
+        'window_info.not_selected': 'NOT_SELECTED',
         'setup_roi.combo_bar': 'Setup Combo Bar',
         'setup_roi.self_stats': 'Setup Character Stats',
         'setup_roi.minimap': 'Setup Minimap',
@@ -11,7 +20,6 @@ GLOBAL_TRANSLATIONS = {
         'tooltip.setup_roi.self_stats': 'Purpose: Scan player HP/MP\nData read: Not specified (TODO)\nExpected result: Coordinates [x, y, w, h]',
         'tooltip.setup_roi.minimap': 'Purpose: Scan minimap\nData read: Not specified (TODO)\nExpected result: Coordinates [x, y, w, h]',
         'tooltip.hunt_area.set': 'Purpose: Scan monster spawn area\nData read: Monster templates, Monster HP bars\nExpected result: Coordinates [x, y, w, h]',
-
         'icon_btn.disabled_action': 'Cannot {action} at this time',
         'icon_btn.not_available': 'Not available',
         'help_hunt_title': '1. Hunt Screen Reminders',
@@ -50,21 +58,20 @@ GLOBAL_TRANSLATIONS = {
         'bring_ok': 'Brought to front',
         'bring_to_front': 'Bring to front',
         'browse': 'Browse',
-                                'btn_apply': 'Apply',
+        'btn_apply': 'Apply',
         'msg_unsaved_changes_lock': 'Please Save or Cancel before selecting another row.',
         'msg_category_add_warning': 'Creating new Icon Categories should be restricted to avoid data clutter.\nAre you sure you want to proceed?',
-
         'btn_apply_to_hunt_config': 'Apply to Hunt Config',
         'btn_calculate': 'Calculate',
-                        'btn_close': 'Close',
+        'btn_close': 'Close',
         'btn_confirm': 'Confirm',
-                                                                'btn_generate_id': 'Btn Generate Id',
+        'btn_generate_id': 'Btn Generate Id',
         'btn_library_manager': 'Library Manager',
         'btn_monster_manager': 'Monster Manager',
         'btn_new_monster': 'New',
-                'btn_open_folder': 'Open Folder',
-                                        'btn_reset': 'Reset',
-                'btn_save_all': 'Save All',
+        'btn_open_folder': 'Open Folder',
+        'btn_reset': 'Reset',
+        'btn_save_all': 'Save All',
         'btn_save_threshold': 'Save Threshold',
         'btn_build_manager': 'Build Manager',
         'btn_class_manager': 'Class Manager',
@@ -1405,6 +1412,16 @@ GLOBAL_TRANSLATIONS = {
         'window_selection': 'Chọn cửa sổ',
         'window_status_label': 'Trạng thái cửa sổ',
         'window_title_contains': 'Tiêu đề cửa sổ chứa:',
+        'window_info.panel_title': 'Nguồn Cửa Sổ (Window Source)',
+        'window_info.title': 'Tên cửa sổ',
+        'window_info.handle': 'Handle / PID',
+        'window_info.bounds': 'Tọa độ',
+        'window_info.status': 'Trạng thái',
+        'window_info.reselect': 'Chọn lại cửa sổ',
+        'window_info.connected': 'CONNECTED',
+        'window_info.lost': 'LOST',
+        'window_info.not_selected': 'NOT_SELECTED',
+
 
     }
 }
