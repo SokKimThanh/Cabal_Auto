@@ -53,7 +53,7 @@ class MainMenuBar(tk.Menu):
             if enabled:
                 print("[Hotkeys] User enabled global hotkeys via menu")
                 try:
-                    self.hotkey_controller.register_all()
+                    self.hotkey_controller.register_all(force=True)
                 except Exception as e:
                     print(f"[Hotkeys] Error re-registering hotkeys: {e}")
             else:
@@ -73,7 +73,7 @@ class MainMenuBar(tk.Menu):
         def _retry_hotkeys():
             print("[Hotkeys] User requested retry registration")
             try:
-                self.hotkey_controller.register_all()
+                self.hotkey_controller.register_all(force=True)
             except Exception as e:
                 print(f"[Hotkeys] Retry failed: {e}")
 

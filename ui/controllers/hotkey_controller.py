@@ -22,6 +22,7 @@ class HotkeyController:
         self._global_monster_hotkey = None
         self._global_build_hotkey = None
         self._global_add_template_hotkey = None
+        self._registered_signature = None   # for idempotency
 
         # Track fallback tkinter bindings
         self._hotkey_fallback_bound = []
@@ -31,12 +32,24 @@ class HotkeyController:
         self._failed_hotkeys = {}
         self._hotkeys_registered_ok = False
 
-    def register_all(self) -> None:
-        """Registers all global hotkeys from config. Fallbacks to Tkinter bindings if keyboard module missing."""
+    def register_all(self, force: bool = False) -> None:
+        """Registers all global hotkeys from config."""
         if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
             hotkey_cfg = self.parent.state_controller.get_hunt_config_value("global_hotkeys", {})
         else:
             hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
+
+        # Idempotency: skip if config unchanged AND already successfully registered
+        try:
+            signature = tuple(sorted((k, str(v)) for k, v in hotkey_cfg.items()))
+        except Exception:
+            signature = None
+
+        if (not force
+                and signature is not None
+                and getattr(self, "_registered_signature", None) == signature
+                and getattr(self, "_hotkeys_registered_ok", False)):
+            return
 
         if not hotkey_cfg.get("enabled", True):
             print("[Hotkeys] Global hotkeys disabled by user")
@@ -261,6 +274,8 @@ class HotkeyController:
             if not self._hotkeys_registered_ok:
                 print(f"Some hotkeys failed to register: {self._failed_hotkeys}")
 
+            self._registered_signature = signature
+
             # Update UI
             try:
                 if hasattr(self.parent, "after"):
@@ -479,16 +494,34 @@ class HotkeyController:
         UIDispatcher.post(_do_library_manager)
 
     def on_hunt_start(self, *_args) -> None:
-        def _do_hunt_start():
-            if hasattr(self.parent, "on_hunt_start"):
-                self.parent.on_hunt_start()
-        UIDispatcher.post(_do_hunt_start)
+        from lib.events.ui_dispatcher import UIDispatcher
+        def _fire():
+            app = self.parent
+            hc = getattr(app, "hunt_controller", None)
+            if hc is None:
+                return
+            try:
+                if app.state_controller.is_bot_running():
+                    return
+                hc.request_start_hunt()
+            except Exception as e:
+                print(f"[Hotkeys] on_hunt_start error: {e}")
+        UIDispatcher.post(_fire)
 
     def on_hunt_stop(self, *_args) -> None:
-        def _do_hunt_stop():
-            if hasattr(self.parent, "on_hunt_stop"):
-                self.parent.on_hunt_stop()
-        UIDispatcher.post(_do_hunt_stop)
+        from lib.events.ui_dispatcher import UIDispatcher
+        def _fire():
+            app = self.parent
+            hc = getattr(app, "hunt_controller", None)
+            if hc is None:
+                return
+            try:
+                if not app.state_controller.is_bot_running():
+                    return
+                hc.request_stop_hunt()
+            except Exception as e:
+                print(f"[Hotkeys] on_hunt_stop error: {e}")
+        UIDispatcher.post(_fire)
 
 
     def on_build_manager(self, *_args) -> None:
