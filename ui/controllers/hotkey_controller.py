@@ -1,4 +1,5 @@
 from typing import Any
+from lib.events.ui_dispatcher import UIDispatcher
 
 try:
     import keyboard
@@ -355,20 +356,14 @@ class HotkeyController:
             hasattr(self.parent, "monster_manager_controller")
             and self.parent.monster_manager_controller
         ):
-            if hasattr(self.parent, "after"):
-                self.parent.after(0, self.parent.window_controller.open_vision_wizard)
-            else:
-                self.parent.window_controller.open_vision_wizard()
+            UIDispatcher.post(self.parent.window_controller.open_vision_wizard)
 
     def on_monster_editor(self, *_args) -> None:
         if (
             hasattr(self.parent, "monster_manager_controller")
             and self.parent.monster_manager_controller
         ):
-            if hasattr(self.parent, "after"):
-                self.parent.after(0, self.parent.monster_manager_controller.open_window)
-            else:
-                self.parent.monster_manager_controller.open_window()
+            UIDispatcher.post(self.parent.monster_manager_controller.open_window)
 
     def on_setup_wizard(self, *_args) -> None:
         def _do_setup_wizard():
@@ -431,10 +426,7 @@ class HotkeyController:
             except Exception as e:
                 print(f"[Hotkeys] Error opening Setup Wizard: {e}")
 
-        if hasattr(self.parent, "after"):
-            self.parent.after(0, _do_setup_wizard)
-        else:
-            _do_setup_wizard()
+        UIDispatcher.post(_do_setup_wizard)
 
     def on_library_manager(self, *_args) -> None:
         def _do_library_manager():
@@ -471,32 +463,20 @@ class HotkeyController:
             except Exception as e:
                 print(f"[Hotkeys] Error opening Library Manager: {e}")
 
-        if hasattr(self.parent, "after"):
-            self.parent.after(0, _do_library_manager)
-        else:
-            _do_library_manager()
+        UIDispatcher.post(_do_library_manager)
 
     def on_hunt_start(self, *_args) -> None:
         if hasattr(self.parent, "on_hunt_start"):
-            if hasattr(self.parent, "after"):
-                self.parent.after(0, self.parent.on_hunt_start)
-            else:
-                self.parent.on_hunt_start()
+            UIDispatcher.post(self.parent.on_hunt_start)
 
     def on_hunt_stop(self, *_args) -> None:
         if hasattr(self.parent, "on_hunt_stop"):
-            if hasattr(self.parent, "after"):
-                self.parent.after(0, self.parent.on_hunt_stop)
-            else:
-                self.parent.on_hunt_stop()
+            UIDispatcher.post(self.parent.on_hunt_stop)
 
 
     def on_build_manager(self, *_args) -> None:
         if hasattr(self.parent, "switch_view"):
-            if hasattr(self.parent, "after"):
-                self.parent.after(0, lambda: self.parent.switch_view("build_manager"))
-            else:
-                self.parent.switch_view("build_manager")
+            UIDispatcher.post(lambda: self.parent.switch_view("build_manager"))
 
     def on_add_template(self, *_args) -> None:
         import os

@@ -80,7 +80,8 @@ def test_hotkey_controller_unregister_all(mock_keyboard):
     )  # 5 hotkeys registered by default
 
 
-def test_hotkey_controller_on_setup_wizard():
+@patch("ui.controllers.hotkey_controller.UIDispatcher.post")
+def test_hotkey_controller_on_setup_wizard(mock_post):
     hunt_cfg = {"ui_mode": "beginner"}
 
     parent = MagicMock()
@@ -95,12 +96,15 @@ def test_hotkey_controller_on_setup_wizard():
     controller = HotkeyController(parent, hunt_cfg)
     controller.on_setup_wizard()
 
-    assert parent.after.call_count == 1
-    args, kwargs = parent.after.call_args
-    assert args[0] == 0
+    assert mock_post.call_count == 1
+    # execute the lambda/function passed to UIDispatcher.post
+    args, kwargs = mock_post.call_args
+    args[0]()
+    parent.window_controller.on_setup_wizard.assert_called_once()
 
 
-def test_hotkey_controller_on_library_manager():
+@patch("ui.controllers.hotkey_controller.UIDispatcher.post")
+def test_hotkey_controller_on_library_manager(mock_post):
     parent = MagicMock()
     parent.hunt_cfg = {}
     parent.library_manager_win = None
@@ -108,9 +112,8 @@ def test_hotkey_controller_on_library_manager():
     controller = HotkeyController(parent, {})
     controller.on_library_manager()
 
-    assert parent.after.call_count == 1
-    args, kwargs = parent.after.call_args
-    assert args[0] == 0
-    # execute the lambda/function passed to after
-    args[1]()
+    assert mock_post.call_count == 1
+    # execute the lambda/function passed to UIDispatcher.post
+    args, kwargs = mock_post.call_args
+    args[0]()
     parent.library_manager_controller.open_library_manager.assert_called_once()
