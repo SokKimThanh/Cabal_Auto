@@ -1,12 +1,6 @@
 from tkinter import messagebox
 
 
-try:
-    import keyboard  # type: ignore
-except ImportError:
-    keyboard = None  # type: ignore
-
-
 class AppLifecycleController:
     """Coordinates application startup and shutdown lifecycles."""
 
@@ -277,14 +271,3 @@ class AppLifecycleController:
                 self.app.hotkey_controller.unregister_all()
             except Exception as e:
                 print(f"[Shutdown] hotkey unregister error: {e}")
-
-        # Safety net: remove any remaining hooks
-        if keyboard is not None:
-            try:
-                keyboard.unhook_all_hotkeys()
-            except Exception:
-                pass
-            try:
-                keyboard.unhook_all()
-            except Exception:
-                pass

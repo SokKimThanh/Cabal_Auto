@@ -8,7 +8,7 @@ pillow>=10.0.0
 
 # GUI Automation
 pyautogui>=0.9.50
-keyboard<2.3.0
+pynput==1.8.2
 pywin32>=306; sys_platform == "win32"  # Required for overlay window (Win32 GDI rendering)
 psutil>=5.9.0; sys_platform == "win32"  # Required for process name detection
 

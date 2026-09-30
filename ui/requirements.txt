@@ -2,4 +2,4 @@ numpy
 pyautogui
 opencv-python
 pillow
-keyboard
+pynput==1.8.2

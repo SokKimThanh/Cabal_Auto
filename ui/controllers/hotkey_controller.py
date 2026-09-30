@@ -1,460 +1,268 @@
-from typing import Any
+import os
+import hashlib
+import json
+from typing import Any, Optional, Dict
 from lib.events.ui_dispatcher import UIDispatcher
 
 try:
-    import keyboard
+    from pynput import keyboard as pynput_keyboard
 except ImportError:
-    keyboard = None
+    pynput_keyboard = None
+
+
+def _to_pynput(hotkey_str: str) -> str:
+    """Convert 'ctrl+shift+r' → '<ctrl>+<shift>+r'."""
+    parts = []
+    for p in hotkey_str.lower().split("+"):
+        p = p.strip()
+        if p in ("ctrl", "control"):
+            parts.append("<ctrl>")
+        elif p in ("shift",):
+            parts.append("<shift>")
+        elif p in ("alt", "menu"):
+            parts.append("<alt>")
+        elif p in ("win", "super", "cmd"):
+            parts.append("<cmd>")
+        elif p.startswith("f") and p[1:].isdigit():
+            parts.append(f"<{p}>")
+        else:
+            parts.append(p)
+    return "+".join(parts)
 
 
 class HotkeyController:
-    """Controller for global hotkey management."""
+    """
+    Manages global and local hotkeys for the Cabal Auto application.
+    Migrated from `keyboard` to `pynput` for Python 3.13+ thread safety.
+    """
 
-    def __init__(self, parent: Any, hunt_cfg: dict = None):
+    def __init__(self, parent: Any) -> None:
         self.parent = parent
-        # Removed cached hunt_cfg
 
-        # Track registered handlers for proper cleanup
-        self._global_start_hotkey = None
-        self._global_stop_hotkey = None
-        self._global_library_hotkey = None
-        self._global_vision_hotkey = None
-        self._global_monster_hotkey = None
-        self._global_build_hotkey = None
-        self._global_add_template_hotkey = None
-        self._registered_signature = None   # for idempotency
+        self._pynput_listener: Optional["pynput_keyboard.GlobalHotKeys"] = None
 
-        # Track fallback tkinter bindings
-        self._hotkey_fallback_bound = []
+        self._registered_signature: Optional[str] = None
+        self._hotkey_fallback_bound: bool = False
 
-        # Track registration status
-        self._registered_hotkey_handlers = {}
-        self._failed_hotkeys = {}
-        self._hotkeys_registered_ok = False
+        self._registered_hotkey_handlers: Dict[str, Any] = {}
+        self._failed_hotkeys: list[str] = []
+        self._hotkeys_registered_ok: bool = False
+
+    def _generate_hotkey_signature(self, hotkeys: dict) -> str:
+        """Create a hash signature of the current hotkeys configuration."""
+        try:
+            hotkey_str = json.dumps(hotkeys, sort_keys=True)
+            return hashlib.md5(hotkey_str.encode('utf-8')).hexdigest()
+        except Exception:
+            return ""
 
     def register_all(self, force: bool = False) -> None:
-        """Registers all global hotkeys from config."""
-        if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-            hotkey_cfg = self.parent.state_controller.get_hunt_config_value("global_hotkeys", {})
-        else:
-            hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
-
-        # Idempotency: skip if config unchanged AND already successfully registered
-        try:
-            signature = tuple(sorted((k, str(v)) for k, v in hotkey_cfg.items()))
-        except Exception:
-            signature = None
-
-        if (not force
-                and signature is not None
-                and getattr(self, "_registered_signature", None) == signature
-                and getattr(self, "_hotkeys_registered_ok", False)):
+        """Register all global hotkeys based on app config using pynput."""
+        state_controller = getattr(self.parent, "state_controller", None)
+        if not state_controller:
+            print("[Hotkeys] Cannot register: state_controller not ready")
             return
 
-        if not hotkey_cfg.get("enabled", True):
-            print("[Hotkeys] Global hotkeys disabled by user")
+        app_config = getattr(state_controller, "app_config", {})
+        hotkeys = app_config.get("hotkeys", {})
+
+        signature = self._generate_hotkey_signature(hotkeys)
+
+        if not force and signature == self._registered_signature and self._hotkeys_registered_ok:
+            # Idempotent - ignore duplicate calls if config hasn't changed
+            return
+
+        print("[Hotkeys] Registering hotkeys via pynput...")
+
+        if pynput_keyboard is None:
+            print("[Hotkeys] Warning: 'pynput' module not available.")
+            if hasattr(self.parent, "_hotkey_import_diag"):
+                self.parent._hotkey_import_diag = True
             self._hotkeys_registered_ok = False
+            self.update_diagnostics_ui_state()
             return
 
-        self._registered_hotkey_handlers = {}
-        self._failed_hotkeys = {}
-        self._hotkeys_registered_ok = False
+        self.unregister_all()
 
-        try:
-            if keyboard is None:
-                print(
-                    "[Hotkeys] Warning: 'keyboard' module not available. "
-                    "Global background hotkeys will not work. Using focused-only fallback."
-                )
+        self._failed_hotkeys = []
 
-                # Fallback: Bind to Tkinter root window directly
-                # Convert hotkey strings like 'ctrl+shift+r' to Tkinter format '<Control-Shift-R>'
-                def _to_tk_seq(h):
-                    parts = h.lower().split("+")
-                    tk_parts = []
-                    for p in parts:
-                        p = p.strip()
-                        if p in ("ctrl", "control"):
-                            tk_parts.append("Control")
-                        elif p in ("shift",):
-                            tk_parts.append("Shift")
-                        elif p in ("alt", "menu"):
-                            tk_parts.append("Alt")
-                        elif len(p) == 1:
-                            tk_parts.append(p.upper())
-                        elif p.startswith("f") and p[1:].isdigit():
-                            tk_parts.append(p.upper())
-                        else:
-                            tk_parts.append(p)
-                    return f"<{'-'.join(tk_parts)}>"
+        start_key = hotkeys.get("start", "ctrl+shift+r")
+        stop_key = hotkeys.get("stop", "ctrl+shift+e")
+        library_key = hotkeys.get("library", "ctrl+shift+l")
+        vision_key = hotkeys.get("vision", "ctrl+shift+v")
+        monster_key = hotkeys.get("monster", "ctrl+shift+m")
+        build_key = hotkeys.get("build", "ctrl+b")
+        add_template_key = hotkeys.get("add_template", "ctrl+shift+t")
 
-                seq_start = _to_tk_seq(hotkey_cfg.get("start_key", "ctrl+shift+r"))
-                seq_stop = _to_tk_seq(hotkey_cfg.get("stop_key", "ctrl+shift+e"))
-                seq_lib = _to_tk_seq(
-                    hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
-                )
-                seq_vision = _to_tk_seq(
-                    hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
-                )
+        hotkeys_map = {}
 
-                try:
-                    # Unbind any previously-bound fallback sequences to avoid duplicates
-                    for s in list(self._hotkey_fallback_bound):
-                        try:
-                            self.parent.unbind_all(s)
-                        except Exception:
-                            pass
-                    self._hotkey_fallback_bound = []
-
-                    # Bind to all widgets (works when app is focused)
-                    self.parent.bind_all(
-                        seq_start,
-                        lambda e: self.on_hunt_start(),
-                        add="+",
-                    )
-                    self._hotkey_fallback_bound.append(seq_start)
-                    self.parent.bind_all(
-                        seq_stop,
-                        lambda e: self.on_hunt_stop(),
-                        add="+",
-                    )
-                    self._hotkey_fallback_bound.append(seq_stop)
-                    self.parent.bind_all(
-                        seq_lib,
-                        lambda e: self.on_library_manager(),
-                        add="+",
-                    )
-                    self._hotkey_fallback_bound.append(seq_lib)
-                    # Sprint 22: Vision Wizard fallback
-                    self.parent.bind_all(
-                        seq_vision,
-                        lambda e: self.on_vision_wizard(),
-                        add="+",
-                    )
-                    self._hotkey_fallback_bound.append(seq_vision)
-                    print(
-                        f"[Hotkeys] Fallback (focused) hotkeys bound: {', '.join(self._hotkey_fallback_bound)}"
-                    )
-                    try:
-                        self.update_diagnostics_ui_state()
-                    except Exception:
-                        pass
-                except Exception as _bind_e:
-                    print(
-                        f"[Hotkeys] Failed to bind fallback focused hotkeys: {_bind_e}"
-                    )
-
+        def safe_add(key_str: str, callback: Any, name: str):
+            if not key_str:
                 return
-
-            # Get hotkey config
-            start_key = hotkey_cfg.get("start_key", "ctrl+shift+r")
-            stop_key = hotkey_cfg.get("stop_key", "ctrl+shift+e")
-            library_key = hotkey_cfg.get("library_manager_key", "ctrl+shift+l")
-            vision_key = hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v")
-            monster_key = hotkey_cfg.get("monster_editor_key", "ctrl+shift+m")
-            build_key = hotkey_cfg.get("build_manager_key", "ctrl+b")
-            add_template_key = hotkey_cfg.get("add_template_key", "ctrl+shift+t")
-
-            # Unregister old hotkeys first (in case of re-registration)
-            self.unregister_all()
-
-            # Register new hotkeys
             try:
-                self._global_start_hotkey = keyboard.add_hotkey(
-                    start_key,
-                    self.on_hunt_start,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[start_key] = self._global_start_hotkey
+                pynput_str = _to_pynput(key_str)
+                hotkeys_map[pynput_str] = callback
             except Exception as e:
-                print(f"Failed to register start hotkey '{start_key}': {e}")
-                self._failed_hotkeys[start_key] = repr(e)
-                self._global_start_hotkey = None
+                print(f"[Hotkeys] Failed to map '{name}' ({key_str}): {e}")
+                self._failed_hotkeys.append(name)
 
+        safe_add(start_key, self.on_hunt_start, "Start")
+        safe_add(stop_key, self.on_hunt_stop, "Stop")
+        safe_add(library_key, self.on_library_manager, "Library")
+        safe_add(vision_key, self.on_vision_wizard, "Vision")
+        safe_add(monster_key, self.on_monster_editor, "Monster")
+        safe_add(build_key, self.on_build_manager, "Build")
+        safe_add(add_template_key, self.on_add_template, "Add Template")
+
+        if hotkeys_map:
             try:
-                self._global_stop_hotkey = keyboard.add_hotkey(
-                    stop_key, self.on_hunt_stop, suppress=False
-                )
-                self._registered_hotkey_handlers[stop_key] = self._global_stop_hotkey
+                self._pynput_listener = pynput_keyboard.GlobalHotKeys(hotkeys_map)
+                self._pynput_listener.start()
+                self._hotkeys_registered_ok = True
+                self._registered_signature = signature
+                self._registered_hotkey_handlers = dict(hotkeys_map)
+
+                print(f"[Hotkeys] Global hotkeys registered: {len(hotkeys_map)} active")
+                if self._failed_hotkeys:
+                    print(f"[Hotkeys] Failed to register: {', '.join(self._failed_hotkeys)}")
             except Exception as e:
-                print(f"Failed to register stop hotkey '{stop_key}': {e}")
-                self._failed_hotkeys[stop_key] = repr(e)
-                self._global_stop_hotkey = None
-
-            try:
-                self._global_library_hotkey = keyboard.add_hotkey(
-                    library_key,
-                    self.on_library_manager,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[library_key] = (
-                    self._global_library_hotkey
-                )
-            except Exception as e:
-                print(f"Failed to register library hotkey '{library_key}': {e}")
-                self._failed_hotkeys[library_key] = repr(e)
-                self._global_library_hotkey = None
-
-            try:
-                self._global_vision_hotkey = keyboard.add_hotkey(
-                    vision_key,
-                    self.on_vision_wizard,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[vision_key] = (
-                    self._global_vision_hotkey
-                )
-            except Exception as e:
-                print(f"Failed to register vision hotkey '{vision_key}': {e}")
-                self._failed_hotkeys[vision_key] = repr(e)
-                self._global_vision_hotkey = None
-
-            try:
-                self._global_monster_hotkey = keyboard.add_hotkey(
-                    monster_key,
-                    self.on_monster_editor,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[monster_key] = (
-                    self._global_monster_hotkey
-                )
-            except Exception as e:
-                print(f"Failed to register monster editor hotkey '{monster_key}': {e}")
-                self._failed_hotkeys[monster_key] = repr(e)
-                self._global_monster_hotkey = None
-
-            try:
-                self._global_build_hotkey = keyboard.add_hotkey(
-                    build_key,
-                    self.on_build_manager,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[build_key] = (
-                    self._global_build_hotkey
-                )
-            except Exception as e:
-                print(f"Failed to register build manager hotkey '{build_key}': {e}")
-                self._failed_hotkeys[build_key] = repr(e)
-                self._global_build_hotkey = None
-
-            try:
-                self._global_add_template_hotkey = keyboard.add_hotkey(
-                    add_template_key,
-                    self.on_add_template,
-                    suppress=False,
-                )
-                self._registered_hotkey_handlers[add_template_key] = (
-                    self._global_add_template_hotkey
-                )
-            except Exception as e:
-                print(f"Failed to register add template hotkey '{add_template_key}': {e}")
-                self._failed_hotkeys[add_template_key] = repr(e)
-                self._global_add_template_hotkey = None
-
-            self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0
-
-            # Log successful registration
-            registered = []
-            if self._global_start_hotkey:
-                registered.append(f"Start={start_key}")
-            if self._global_stop_hotkey:
-                registered.append(f"Stop={stop_key}")
-            if self._global_library_hotkey:
-                registered.append(f"Library={library_key}")
-            if self._global_vision_hotkey:
-                registered.append(f"Vision={vision_key}")
-            if self._global_monster_hotkey:
-                registered.append(f"Monster={monster_key}")
-            if self._global_build_hotkey:
-                registered.append(f"Build={build_key}")
-
-            if registered:
-                print(f"Global hotkeys registered: {', '.join(registered)}")
-
-            if not self._hotkeys_registered_ok:
-                print(f"Some hotkeys failed to register: {self._failed_hotkeys}")
-
+                print(f"[Hotkeys] Error creating pynput listener: {e}")
+                self._hotkeys_registered_ok = False
+                self._registered_signature = None
+        else:
+            self._hotkeys_registered_ok = True
             self._registered_signature = signature
+            print("[Hotkeys] No global hotkeys configured.")
 
-            # Update UI
-            try:
-                if hasattr(self.parent, "after"):
-                    self.parent.after(150, self.update_diagnostics_ui_state)
-                else:
-                    self.update_diagnostics_ui_state()
-            except Exception:
-                pass
-
-        except Exception as e:
-            print(f"Error registering global hotkeys: {e}")
-            self._hotkeys_registered_ok = False
-            # Update UI to show error state
-            try:
-                if hasattr(self.parent, "after"):
-                    self.parent.after(150, self.update_diagnostics_ui_state)
-                else:
-                    self.update_diagnostics_ui_state()
-            except Exception:
-                pass
+        # Schedule UI update
+        if hasattr(self.parent, "root") and hasattr(self.parent.root, "after"):
+            self.parent.root.after(150, self.update_diagnostics_ui_state)
+        else:
+            self.update_diagnostics_ui_state()
 
     def unregister_all(self) -> None:
-        """Unregister global hotkeys to clean up resources."""
-        try:
-            if hasattr(self.parent, "unbind_all"):
-                for seq in list(self._hotkey_fallback_bound):
-                    try:
-                        self.parent.unbind_all(seq)
-                    except Exception:
-                        pass
-            self._hotkey_fallback_bound = []
-            self._registered_hotkey_handlers = {}
+        """Unregister all global and local hotkeys."""
+        print("[Hotkeys] Unregistering all hotkeys...")
 
-            if keyboard is None:
-                return
-
-            if self._global_start_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_start_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering start hotkey: {e}")
-                finally:
-                    self._global_start_hotkey = None
-
-            if self._global_stop_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_stop_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering stop hotkey: {e}")
-                finally:
-                    self._global_stop_hotkey = None
-
-            if self._global_library_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_library_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering library hotkey: {e}")
-                finally:
-                    self._global_library_hotkey = None
-
-            if self._global_vision_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_vision_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering vision hotkey: {e}")
-                finally:
-                    self._global_vision_hotkey = None
-
-            if self._global_monster_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_monster_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering monster hotkey: {e}")
-                finally:
-                    self._global_monster_hotkey = None
-
-            if self._global_build_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_build_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering build hotkey: {e}")
-                finally:
-                    self._global_build_hotkey = None
-
-            if self._global_add_template_hotkey is not None:
-                try:
-                    keyboard.remove_hotkey(self._global_add_template_hotkey)
-                except Exception as e:
-                    print(f"Error unregistering add template hotkey: {e}")
-                finally:
-                    self._global_add_template_hotkey = None
-        except Exception as e:
-            print(f"Error in unregister_all: {e}")
+        if hasattr(self.parent, "root") and self._hotkey_fallback_bound:
             try:
-                if hasattr(self.parent, "_hotkey_diag_var"):
-                    self.parent._hotkey_diag_var.set(str(e))
-            except Exception:
-                pass
+                root = self.parent.root
+                root.unbind_all("<Control-Shift-R>")
+                root.unbind_all("<Control-Shift-E>")
+                root.unbind_all("<Control-Shift-L>")
+                root.unbind_all("<Control-Shift-V>")
+                root.unbind_all("<Control-Shift-M>")
+                root.unbind_all("<Control-B>")
+                root.unbind_all("<Control-b>")
+                self._hotkey_fallback_bound = False
+            except Exception as e:
+                print(f"[Hotkeys] Error unbinding Tkinter fallbacks: {e}")
+
+        if self._pynput_listener is not None:
+            try:
+                self._pynput_listener.stop()
+            except Exception as e:
+                print(f"[Hotkeys] Error stopping pynput listener: {e}")
+            finally:
+                self._pynput_listener = None
+
+        self._registered_hotkey_handlers.clear()
+        self._registered_signature = None
+        self._hotkeys_registered_ok = False
+        print("[Hotkeys] Unregistration complete.")
 
     def on_vision_wizard(self, *_args) -> None:
         def _do_vision_wizard():
-            if (
-                hasattr(self.parent, "monster_manager_controller")
-                and self.parent.monster_manager_controller
-            ):
-                self.parent.window_controller.open_vision_wizard()
+            try:
+                print("[Hotkeys] Vision Wizard hotkey pressed")
+
+                # Try opening library manager and letting it handle Vision Wizard
+                if hasattr(self.parent, "library_manager_controller"):
+                    self.parent.library_manager_controller.open_library_manager()
+
+                    if hasattr(self.parent, "library_manager_win"):
+                        existing = self.parent.library_manager_win
+                        if existing and getattr(existing, "winfo_exists", lambda: False)():
+                            # Deiconify/lift if needed
+                            try:
+                                if not existing.winfo_viewable():
+                                    existing.deiconify()
+                                existing.lift()
+                                existing.focus_force()
+                            except Exception:
+                                pass
+
+                            # Delegate to library manager to show Vision Wizard
+                            if hasattr(existing, "open_vision_wizard"):
+                                existing.open_vision_wizard()
+                                return
+
+                print("[Hotkeys] Fallback: Opening Setup Wizard directly")
+                if hasattr(self.parent, "window_controller"):
+                    self.parent.window_controller.on_setup_wizard(hide_parent=False)
+            except Exception as e:
+                print(f"[Hotkeys] Error opening Vision Wizard: {e}")
+
         UIDispatcher.post(_do_vision_wizard)
 
     def on_monster_editor(self, *_args) -> None:
         def _do_monster_editor():
-            if (
-                hasattr(self.parent, "monster_manager_controller")
-                and self.parent.monster_manager_controller
-            ):
-                self.parent.monster_manager_controller.open_window()
-        UIDispatcher.post(_do_monster_editor)
-
-    def on_setup_wizard(self, *_args) -> None:
-        def _do_setup_wizard():
             try:
-                print("[Hotkeys] Setup Wizard hotkey pressed")
-                if hasattr(self.parent, "state_controller") and hasattr(self.parent.state_controller, "hunt_cfg"):
-                    current_mode = self.parent.state_controller.get_hunt_config_value("ui_mode", "beginner")
-                else:
-                    current_mode = getattr(self.parent, "hunt_cfg", {}).get("ui_mode", "beginner")
+                print("[Hotkeys] Monster Editor hotkey pressed")
 
-                if current_mode != "beginner":
-                    print(f"[Hotkeys] Setup Wizard blocked - current mode: {current_mode}")
+                # Check for existing standalone monster manager
+                existing = getattr(self.parent, "monster_manager_win", None)
+                if (
+                    existing is not None
+                    and getattr(existing, "winfo_exists", lambda: False)()
+                ):
+                    if existing.winfo_viewable():
+                        try:
+                            existing.withdraw()
+                        except Exception:
+                            try:
+                                existing.iconify()
+                            except Exception:
+                                pass
+                    else:
+                        try:
+                            existing.deiconify()
+                            existing.lift()
+                            existing.focus_force()
+                        except Exception:
+                            pass
                     return
 
-                existing = (
-                    getattr(self.parent, "_setup_wizard_win", None)
-                    or getattr(self.parent, "setup_wizard_win", None)
-                    or getattr(self.parent, "_setup_wizard", None)
-                )
-                try:
-                    if (
-                        existing is not None
-                        and getattr(existing, "winfo_exists", lambda: False)()
-                    ):
-                        win = getattr(existing, "dialog", existing)
-                        if win.winfo_viewable():
-                            try:
-                                win.withdraw()
-                            except Exception:
+                # If missing, try opening via Library Manager
+                if hasattr(self.parent, "library_manager_controller"):
+                    self.parent.library_manager_controller.open_library_manager()
+                    if hasattr(self.parent, "library_manager_win"):
+                        lib_win = self.parent.library_manager_win
+                        if lib_win and getattr(lib_win, "winfo_exists", lambda: False)():
+                            # Switch to Monsters tab
+                            if hasattr(lib_win, "notebook"):
                                 try:
-                                    win.iconify()
+                                    # Find the monster tab
+                                    for i, tab_id in enumerate(lib_win.notebook.tabs()):
+                                        if "monster" in str(tab_id).lower() or "quái" in str(lib_win.notebook.tab(tab_id, "text")).lower():
+                                            lib_win.notebook.select(tab_id)
+                                            break
                                 except Exception:
                                     pass
-                        else:
-                            try:
-                                win.deiconify()
-                                win.lift()
-                                win.focus_force()
-                                try:
-                                    win.attributes("-topmost", True)
-                                    if hasattr(win, "after"):
-                                        win.after(
-                                            120, lambda: win.attributes("-topmost", False)
-                                        )
-                                except Exception:
-                                    pass
-                            except Exception:
-                                try:
-                                    win.lift()
-                                    win.focus_force()
-                                except Exception:
-                                    pass
-                        return
-                except Exception:
-                    pass
 
-                print("[Hotkeys] Opening Setup Wizard directly from hotkey")
-                if hasattr(self.parent, "window_controller"):
-                    self.parent.window_controller.on_setup_wizard(hide_parent=False)
+                            try:
+                                if not lib_win.winfo_viewable():
+                                    lib_win.deiconify()
+                                lib_win.lift()
+                                lib_win.focus_force()
+                            except Exception:
+                                pass
+                            return
+
             except Exception as e:
-                print(f"[Hotkeys] Error opening Setup Wizard: {e}")
+                print(f"[Hotkeys] Error handling Monster Editor hotkey: {e}")
 
-        UIDispatcher.post(_do_setup_wizard)
+        UIDispatcher.post(_do_monster_editor)
 
     def on_library_manager(self, *_args) -> None:
         def _do_library_manager():
@@ -494,7 +302,6 @@ class HotkeyController:
         UIDispatcher.post(_do_library_manager)
 
     def on_hunt_start(self, *_args) -> None:
-        from lib.events.ui_dispatcher import UIDispatcher
         def _fire():
             app = self.parent
             hc = getattr(app, "hunt_controller", None)
@@ -509,7 +316,6 @@ class HotkeyController:
         UIDispatcher.post(_fire)
 
     def on_hunt_stop(self, *_args) -> None:
-        from lib.events.ui_dispatcher import UIDispatcher
         def _fire():
             app = self.parent
             hc = getattr(app, "hunt_controller", None)
@@ -576,22 +382,7 @@ class HotkeyController:
 
                 lang = getattr(self.parent, "lang", "vi")
 
-                # Count actual registered hotkeys (not bindings)
-                registered_count = 0
-                hotkey_details = []
-
-                if self._global_start_hotkey is not None:
-                    registered_count += 1
-                    hotkey_details.append("Start" if lang == "en" else "Bắt đầu")
-                if self._global_stop_hotkey is not None:
-                    registered_count += 1
-                    hotkey_details.append("Stop" if lang == "en" else "Dừng")
-                if self._global_library_hotkey is not None:
-                    registered_count += 1
-                    hotkey_details.append("Library" if lang == "en" else "Thư viện")
-                if self._global_vision_hotkey is not None:
-                    registered_count += 1
-                    hotkey_details.append("Vision" if lang == "en" else "Thị giác")
+                registered_count = len(self._registered_hotkey_handlers) if self._hotkeys_registered_ok else 0
 
                 state_controller = getattr(self.parent, "state_controller", None)
                 if not state_controller:
@@ -607,14 +398,12 @@ class HotkeyController:
                     )
                     state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
 
-                    # Show count and active hotkeys list
+                    # Show count
                     detail_text = (
                         f"{registered_count} hotkeys active"
                         if lang == "en"
                         else f"{registered_count} phím tắt đang hoạt động"
                     )
-                    if hotkey_details:
-                        detail_text += f": {', '.join(hotkey_details)}"
                     state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
 
                 # State 2: Partial failure - Some hotkeys failed
@@ -649,9 +438,9 @@ class HotkeyController:
                     # Show explanation
                     if has_import_error:
                         explanation = (
-                            "The 'keyboard' package is not installed in your Python environment."
+                            "The 'pynput' package is not installed in your Python environment."
                             if lang == "en"
-                            else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
+                            else "Gói 'pynput' chưa được cài đặt trong Python của bạn."
                         )
                     else:
                         explanation = (
