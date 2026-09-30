@@ -1,229 +1,302 @@
-import os
-import hashlib
-import json
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Callable, Optional, Tuple
+import threading
+import logging
+
 from lib.events.ui_dispatcher import UIDispatcher
 
+logger = logging.getLogger(__name__)
+
 try:
-    from pynput import keyboard as pynput_keyboard
+    import win32gui
+    import win32con
+    import win32api
+    HAS_WIN32 = True
 except ImportError:
-    pynput_keyboard = None
+    HAS_WIN32 = False
+    logger.warning("[Hotkeys] pywin32 not available — global hotkeys disabled")
 
 
-def _to_pynput(hotkey_str: str) -> str:
-    """Convert 'ctrl+shift+r' → '<ctrl>+<shift>+r'."""
-    parts = []
-    for p in hotkey_str.lower().split("+"):
+MOD_ALT = 0x0001
+MOD_CONTROL = 0x0002
+MOD_SHIFT = 0x0004
+MOD_WIN = 0x0008
+MOD_NOREPEAT = 0x4000
+
+
+def _parse_hotkey(s: str) -> Tuple[int, int]:
+    """Convert 'ctrl+shift+r' -> (modifiers, virtual_key_code)."""
+    mods = 0
+    vk = 0
+    for p in s.lower().split("+"):
         p = p.strip()
+        if not p:
+            continue
         if p in ("ctrl", "control"):
-            parts.append("<ctrl>")
-        elif p in ("shift",):
-            parts.append("<shift>")
+            mods |= MOD_CONTROL
+        elif p == "shift":
+            mods |= MOD_SHIFT
         elif p in ("alt", "menu"):
-            parts.append("<alt>")
-        elif p in ("win", "super", "cmd"):
-            parts.append("<cmd>")
+            mods |= MOD_ALT
+        elif p in ("win", "super", "cmd", "windows"):
+            mods |= MOD_WIN
         elif p.startswith("f") and p[1:].isdigit():
-            parts.append(f"<{p}>")
+            n = int(p[1:])
+            if not (1 <= n <= 24):
+                raise ValueError(f"Invalid F-key: {p}")
+            vk = 0x70 + (n - 1)
+        elif p == "space":
+            vk = 0x20
+        elif p == "tab":
+            vk = 0x09
+        elif p in ("enter", "return"):
+            vk = 0x0D
+        elif p in ("esc", "escape"):
+            vk = 0x1B
+        elif len(p) == 1:
+            vk = ord(p.upper())
         else:
-            parts.append(p)
-    return "+".join(parts)
+            raise ValueError(f"Unknown key: {p}")
+
+    if vk == 0:
+        raise ValueError(f"No key found in hotkey: {s}")
+
+    return mods | MOD_NOREPEAT, vk
 
 
 class HotkeyController:
-    """
-    Manages global and local hotkeys for the Cabal Auto application.
-    Migrated from `keyboard` to `pynput` for Python 3.13+ thread safety.
+    """Global hotkey controller using Windows RegisterHotKey API.
+
+    This avoids ctypes callbacks entirely by receiving WM_HOTKEY messages
+    through a hidden window on a dedicated thread. Safe with Tkinter on
+    all supported Python versions.
     """
 
-    def __init__(self, parent: Any) -> None:
+    def __init__(self, parent: Any, hunt_cfg: dict = None):
         self.parent = parent
-
-        self._pynput_listener: Optional["pynput_keyboard.GlobalHotKeys"] = None
-
-        self._registered_signature: Optional[str] = None
-        self._hotkey_fallback_bound: bool = False
-
-        self._registered_hotkey_handlers: Dict[str, Any] = {}
-        self._failed_hotkeys: list[str] = []
-        self._hotkeys_registered_ok: bool = False
-
-    def _generate_hotkey_signature(self, hotkeys: dict) -> str:
-        """Create a hash signature of the current hotkeys configuration."""
-        try:
-            hotkey_str = json.dumps(hotkeys, sort_keys=True)
-            return hashlib.md5(hotkey_str.encode('utf-8')).hexdigest()
-        except Exception:
-            return ""
+        self._thread: Optional[threading.Thread] = None
+        self._thread_id: int = 0
+        self._thread_ready = threading.Event()
+        self._stop_event = threading.Event()
+        self._hwnd = None
+        self._hwnd_lock = threading.Lock()
+        self._wnd_class = None  # keep reference
+        self._hotkey_callbacks: Dict[int, Callable] = {}
+        self._hotkey_names: Dict[int, str] = {}
+        self._next_id = 1
+        self._registered_signature = None
+        self._hotkeys_registered_ok = False
+        self._failed_hotkeys: Dict[str, str] = {}
+        self._registered_hotkey_handlers: Dict[str, int] = {}
 
     def register_all(self, force: bool = False) -> None:
-        """Register all global hotkeys based on app config using pynput."""
-        state_controller = getattr(self.parent, "state_controller", None)
-        if not state_controller:
-            print("[Hotkeys] Cannot register: state_controller not ready")
-            return
-
-        app_config = getattr(state_controller, "app_config", {})
-        hotkeys = app_config.get("hotkeys", {})
-
-        signature = self._generate_hotkey_signature(hotkeys)
-
-        if not force and signature == self._registered_signature and self._hotkeys_registered_ok:
-            # Idempotent - ignore duplicate calls if config hasn't changed
-            return
-
-        print("[Hotkeys] Registering hotkeys via pynput...")
-
-        if pynput_keyboard is None:
-            print("[Hotkeys] Warning: 'pynput' module not available.")
-            if hasattr(self.parent, "_hotkey_import_diag"):
-                self.parent._hotkey_import_diag = True
+        if not HAS_WIN32:
+            logger.warning("[Hotkeys] pywin32 not available — cannot register global hotkeys")
             self._hotkeys_registered_ok = False
-            self.update_diagnostics_ui_state()
+            return
+
+        if hasattr(self.parent, "state_controller"):
+            hotkey_cfg = self.parent.state_controller.get_hunt_config_value("global_hotkeys", {})
+        else:
+            hotkey_cfg = getattr(self.parent, "hunt_cfg", {}).get("global_hotkeys", {})
+
+        try:
+            signature = tuple(sorted((k, str(v)) for k, v in hotkey_cfg.items()))
+        except Exception:
+            signature = None
+
+        if (not force and signature is not None
+                and self._registered_signature == signature
+                and self._hotkeys_registered_ok):
+            return
+
+        if not hotkey_cfg.get("enabled", True):
+            logger.info("[Hotkeys] Global hotkeys disabled by user")
+            self._hotkeys_registered_ok = False
             return
 
         self.unregister_all()
 
-        self._failed_hotkeys = []
+        mapping = [
+            (hotkey_cfg.get("start_key", "ctrl+shift+r"), self.on_hunt_start),
+            (hotkey_cfg.get("stop_key", "ctrl+shift+e"), self.on_hunt_stop),
+            (hotkey_cfg.get("library_manager_key", "ctrl+shift+l"), self.on_library_manager),
+            (hotkey_cfg.get("vision_wizard_key", "ctrl+shift+v"), self.on_vision_wizard),
+            (hotkey_cfg.get("monster_editor_key", "ctrl+shift+m"), self.on_monster_editor),
+            (hotkey_cfg.get("build_manager_key", "ctrl+b"), self.on_build_manager),
+            (hotkey_cfg.get("add_template_key", "ctrl+shift+t"), self.on_add_template),
+        ]
 
-        start_key = hotkeys.get("start", "ctrl+shift+r")
-        stop_key = hotkeys.get("stop", "ctrl+shift+e")
-        library_key = hotkeys.get("library", "ctrl+shift+l")
-        vision_key = hotkeys.get("vision", "ctrl+shift+v")
-        monster_key = hotkeys.get("monster", "ctrl+shift+m")
-        build_key = hotkeys.get("build", "ctrl+b")
-        add_template_key = hotkeys.get("add_template", "ctrl+shift+t")
+        self._hotkey_callbacks.clear()
+        self._hotkey_names.clear()
+        self._registered_hotkey_handlers.clear()
+        self._failed_hotkeys.clear()
+        self._next_id = 1
 
-        hotkeys_map = {}
-
-        def safe_add(key_str: str, callback: Any, name: str):
-            if not key_str:
-                return
+        for hotkey_str, callback in mapping:
             try:
-                pynput_str = _to_pynput(key_str)
-                hotkeys_map[pynput_str] = callback
+                # validate parse here to report failures early
+                _parse_hotkey(hotkey_str)
+                hk_id = self._next_id
+                self._next_id += 1
+                self._hotkey_callbacks[hk_id] = callback
+                self._hotkey_names[hk_id] = hotkey_str
+                self._registered_hotkey_handlers[hotkey_str] = hk_id
             except Exception as e:
-                print(f"[Hotkeys] Failed to map '{name}' ({key_str}): {e}")
-                self._failed_hotkeys.append(name)
+                self._failed_hotkeys[hotkey_str] = repr(e)
+                logger.error(f"[Hotkeys] Parse error for {hotkey_str}: {e}")
 
-        safe_add(start_key, self.on_hunt_start, "Start")
-        safe_add(stop_key, self.on_hunt_stop, "Stop")
-        safe_add(library_key, self.on_library_manager, "Library")
-        safe_add(vision_key, self.on_vision_wizard, "Vision")
-        safe_add(monster_key, self.on_monster_editor, "Monster")
-        safe_add(build_key, self.on_build_manager, "Build")
-        safe_add(add_template_key, self.on_add_template, "Add Template")
+        self._stop_event.clear()
+        self._thread_ready.clear()
+        self._thread = threading.Thread(
+            target=self._message_loop_thread,
+            name="Win32HotkeyListener",
+            daemon=True,
+        )
+        self._thread.start()
 
-        if hotkeys_map:
-            try:
-                self._pynput_listener = pynput_keyboard.GlobalHotKeys(hotkeys_map)
-                self._pynput_listener.start()
-                self._hotkeys_registered_ok = True
-                self._registered_signature = signature
-                self._registered_hotkey_handlers = dict(hotkeys_map)
+        self._thread_ready.wait(timeout=3.0)
 
-                print(f"[Hotkeys] Global hotkeys registered: {len(hotkeys_map)} active")
-                if self._failed_hotkeys:
-                    print(f"[Hotkeys] Failed to register: {', '.join(self._failed_hotkeys)}")
-            except Exception as e:
-                print(f"[Hotkeys] Error creating pynput listener: {e}")
-                self._hotkeys_registered_ok = False
-                self._registered_signature = None
-        else:
-            self._hotkeys_registered_ok = True
-            self._registered_signature = signature
-            print("[Hotkeys] No global hotkeys configured.")
+        self._registered_signature = signature
+        self._hotkeys_registered_ok = len(self._failed_hotkeys) == 0 and len(self._hotkey_callbacks) > 0
 
-        # Schedule UI update
-        if hasattr(self.parent, "root") and hasattr(self.parent.root, "after"):
-            self.parent.root.after(150, self.update_diagnostics_ui_state)
-        else:
-            self.update_diagnostics_ui_state()
+        try:
+            if hasattr(self.parent, "after"):
+                self.parent.after(150, self.update_diagnostics_ui_state)
+        except Exception:
+            pass
 
     def unregister_all(self) -> None:
-        """Unregister all global and local hotkeys."""
-        print("[Hotkeys] Unregistering all hotkeys...")
-
-        if hasattr(self.parent, "root") and self._hotkey_fallback_bound:
+        self._stop_event.set()
+        if self._thread_id:
             try:
-                root = self.parent.root
-                root.unbind_all("<Control-Shift-R>")
-                root.unbind_all("<Control-Shift-E>")
-                root.unbind_all("<Control-Shift-L>")
-                root.unbind_all("<Control-Shift-V>")
-                root.unbind_all("<Control-Shift-M>")
-                root.unbind_all("<Control-B>")
-                root.unbind_all("<Control-b>")
-                self._hotkey_fallback_bound = False
-            except Exception as e:
-                print(f"[Hotkeys] Error unbinding Tkinter fallbacks: {e}")
-
-        if self._pynput_listener is not None:
-            try:
-                self._pynput_listener.stop()
-            except Exception as e:
-                print(f"[Hotkeys] Error stopping pynput listener: {e}")
-            finally:
-                self._pynput_listener = None
-
+                win32api.PostThreadMessage(self._thread_id, win32con.WM_QUIT, 0, 0)
+            except Exception:
+                pass
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+        self._thread = None
+        self._thread_id = 0
+        with self._hwnd_lock:
+            self._hwnd = None
+        self._hotkey_callbacks.clear()
+        self._hotkey_names.clear()
         self._registered_hotkey_handlers.clear()
         self._registered_signature = None
         self._hotkeys_registered_ok = False
-        print("[Hotkeys] Unregistration complete.")
+
+    def _message_loop_thread(self) -> None:
+        """Dedicated thread: create hidden window, register hotkeys, pump messages."""
+        self._thread_id = win32api.GetCurrentThreadId()
+        wc_name = f"CabalAutoHotkeyWin_{id(self)}"
+
+        try:
+            wc = win32gui.WNDCLASS()
+            wc.lpfnWndProc = self._wnd_proc
+            wc.lpszClassName = wc_name
+            wc.hInstance = win32api.GetModuleHandle(None)
+            self._wnd_class = wc
+            try:
+                win32gui.RegisterClass(wc)
+            except Exception as e:
+                logger.debug(f"[Hotkeys] RegisterClass: {e}")
+
+            hwnd = win32gui.CreateWindow(
+                wc_name, "CabalAutoHotkey", 0,
+                0, 0, 0, 0,
+                0, 0, wc.hInstance, None,
+            )
+            with self._hwnd_lock:
+                self._hwnd = hwnd
+
+            # register hotkeys (must be done from this thread)
+            failed_ids = []
+            for hk_id, hotkey_str in list(self._hotkey_names.items()):
+                try:
+                    mods, vk = _parse_hotkey(hotkey_str)
+                    if win32gui.RegisterHotKey(hwnd, hk_id, mods, vk):
+                        logger.info(f"[Hotkeys] Registered: {hotkey_str} (id={hk_id})")
+                    else:
+                        err = win32api.GetLastError()
+                        self._failed_hotkeys[hotkey_str] = f"RegisterHotKey err {err}"
+                        failed_ids.append(hk_id)
+                        logger.error(f"[Hotkeys] RegisterHotKey failed for {hotkey_str}: err {err}")
+                except Exception as e:
+                    self._failed_hotkeys[hotkey_str] = repr(e)
+                    failed_ids.append(hk_id)
+                    logger.error(f"[Hotkeys] Register error for {hotkey_str}: {e}")
+
+            for hk_id in failed_ids:
+                self._hotkey_callbacks.pop(hk_id, None)
+                self._hotkey_names.pop(hk_id, None)
+
+            self._thread_ready.set()
+
+            # pump messages until WM_QUIT
+            try:
+                win32gui.PumpMessages()
+            except Exception as e:
+                logger.error(f"[Hotkeys] PumpMessages error: {e}")
+
+            # cleanup
+            for hk_id in list(self._hotkey_names.keys()):
+                try:
+                    win32gui.UnregisterHotKey(hwnd, hk_id)
+                except Exception:
+                    pass
+            try:
+                win32gui.DestroyWindow(hwnd)
+            except Exception:
+                pass
+
+        except Exception as e:
+            logger.error(f"[Hotkeys] Message loop thread crashed: {e}")
+            self._thread_ready.set()
+
+    def _wnd_proc(self, hwnd, msg, wparam, lparam):
+        if msg == win32con.WM_HOTKEY:
+            callback = self._hotkey_callbacks.get(wparam)
+            if callback:
+                try:
+                    UIDispatcher.post(callback)
+                except Exception as e:
+                    logger.error(f"[Hotkeys] WM_HOTKEY dispatch failed: {e}")
+            return 0
+        elif msg == win32con.WM_CLOSE:
+            win32gui.DestroyWindow(hwnd)
+            return 0
+        elif msg == win32con.WM_DESTROY:
+            win32gui.PostQuitMessage(0)
+            return 0
+        return win32gui.DefWindowProc(hwnd, msg, wparam, lparam)
+
+    # ------------------------------------------------------------------
+    # Callbacks (giữ nguyên từ bản pynput)
+    # ------------------------------------------------------------------
 
     def on_vision_wizard(self, *_args) -> None:
-        def _do_vision_wizard():
-            try:
-                print("[Hotkeys] Vision Wizard hotkey pressed")
-
-                # Try opening library manager and letting it handle Vision Wizard
-                if hasattr(self.parent, "library_manager_controller"):
-                    self.parent.library_manager_controller.open_library_manager()
-
-                    if hasattr(self.parent, "library_manager_win"):
-                        existing = self.parent.library_manager_win
-                        if existing and getattr(existing, "winfo_exists", lambda: False)():
-                            # Deiconify/lift if needed
-                            try:
-                                if not existing.winfo_viewable():
-                                    existing.deiconify()
-                                existing.lift()
-                                existing.focus_force()
-                            except Exception:
-                                pass
-
-                            # Delegate to library manager to show Vision Wizard
-                            if hasattr(existing, "open_vision_wizard"):
-                                existing.open_vision_wizard()
-                                return
-
-                print("[Hotkeys] Fallback: Opening Setup Wizard directly")
-                if hasattr(self.parent, "window_controller"):
-                    self.parent.window_controller.on_setup_wizard(hide_parent=False)
-            except Exception as e:
-                print(f"[Hotkeys] Error opening Vision Wizard: {e}")
-
-        UIDispatcher.post(_do_vision_wizard)
+        def _do():
+            if (hasattr(self.parent, "monster_manager_controller")
+                    and self.parent.monster_manager_controller):
+                self.parent.window_controller.open_vision_wizard()
+        UIDispatcher.post(_do)
 
     def on_monster_editor(self, *_args) -> None:
-        def _do_monster_editor():
-            try:
-                print("[Hotkeys] Monster Editor hotkey pressed")
+        def _do():
+            if (hasattr(self.parent, "monster_manager_controller")
+                    and self.parent.monster_manager_controller):
+                self.parent.monster_manager_controller.open_window()
+        UIDispatcher.post(_do)
 
-                # Check for existing standalone monster manager
-                existing = getattr(self.parent, "monster_manager_win", None)
-                if (
-                    existing is not None
-                    and getattr(existing, "winfo_exists", lambda: False)()
-                ):
+    def on_library_manager(self, *_args) -> None:
+        def _do():
+            try:
+                existing = getattr(self.parent, "library_manager_win", None)
+                if existing is not None and getattr(existing, "winfo_exists", lambda: False)():
                     if existing.winfo_viewable():
                         try:
                             existing.withdraw()
                         except Exception:
-                            try:
-                                existing.iconify()
-                            except Exception:
-                                pass
+                            pass
                     else:
                         try:
                             existing.deiconify()
@@ -232,74 +305,11 @@ class HotkeyController:
                         except Exception:
                             pass
                     return
-
-                # If missing, try opening via Library Manager
-                if hasattr(self.parent, "library_manager_controller"):
-                    self.parent.library_manager_controller.open_library_manager()
-                    if hasattr(self.parent, "library_manager_win"):
-                        lib_win = self.parent.library_manager_win
-                        if lib_win and getattr(lib_win, "winfo_exists", lambda: False)():
-                            # Switch to Monsters tab
-                            if hasattr(lib_win, "notebook"):
-                                try:
-                                    # Find the monster tab
-                                    for i, tab_id in enumerate(lib_win.notebook.tabs()):
-                                        if "monster" in str(tab_id).lower() or "quái" in str(lib_win.notebook.tab(tab_id, "text")).lower():
-                                            lib_win.notebook.select(tab_id)
-                                            break
-                                except Exception:
-                                    pass
-
-                            try:
-                                if not lib_win.winfo_viewable():
-                                    lib_win.deiconify()
-                                lib_win.lift()
-                                lib_win.focus_force()
-                            except Exception:
-                                pass
-                            return
-
-            except Exception as e:
-                print(f"[Hotkeys] Error handling Monster Editor hotkey: {e}")
-
-        UIDispatcher.post(_do_monster_editor)
-
-    def on_library_manager(self, *_args) -> None:
-        def _do_library_manager():
-            try:
-                print("[Hotkeys] Library Manager hotkey pressed")
-                existing = getattr(self.parent, "library_manager_win", None)
-                if (
-                    existing is not None
-                    and getattr(existing, "winfo_exists", lambda: False)()
-                ):
-                    if existing.winfo_viewable():
-                        try:
-                            existing.withdraw()
-                        except Exception:
-                            try:
-                                existing.iconify()
-                            except Exception:
-                                pass
-                    else:
-                        try:
-                            existing.deiconify()
-                            existing.lift()
-                            existing.focus_force()
-                        except Exception:
-                            try:
-                                existing.lift()
-                                existing.focus_force()
-                            except Exception:
-                                pass
-                    return
-
                 if hasattr(self.parent, "library_manager_controller"):
                     self.parent.library_manager_controller.open_library_manager()
             except Exception as e:
-                print(f"[Hotkeys] Error opening Library Manager: {e}")
-
-        UIDispatcher.post(_do_library_manager)
+                print(f"[Hotkeys] Library Manager error: {e}")
+        UIDispatcher.post(_do)
 
     def on_hunt_start(self, *_args) -> None:
         def _fire():
@@ -329,134 +339,61 @@ class HotkeyController:
                 print(f"[Hotkeys] on_hunt_stop error: {e}")
         UIDispatcher.post(_fire)
 
-
     def on_build_manager(self, *_args) -> None:
-        def _do_build_manager():
+        def _do():
             if hasattr(self.parent, "switch_view"):
                 self.parent.switch_view("build_manager")
-        UIDispatcher.post(_do_build_manager)
+        UIDispatcher.post(_do)
 
     def on_add_template(self, *_args) -> None:
-        def _do_add_template():
+        def _do():
             import os
             from lib.system.window_manager import WindowManager
             from lib.events.event_bus import EventBus, VisionAddTemplateEvent
-
             wm = WindowManager()
             fg_hwnd = wm.get_foreground_window()
             if fg_hwnd:
                 info = wm.get_window_info(fg_hwnd)
                 if info:
-                    app_pid = os.getpid()
-                    if info.pid == app_pid:
+                    if info.pid == os.getpid():
                         EventBus.trigger(VisionAddTemplateEvent())
                         return
-
-                    # Check if it matches configured cabal window
                     target_hwnd = None
                     if hasattr(self.parent, "state_controller"):
                         target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
-
                     if target_hwnd and info.hwnd == target_hwnd:
                         EventBus.trigger(VisionAddTemplateEvent())
                         return
-
-                    # If neither the bot app nor the target game, ignore the hotkey
-                    print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
                     return
-
             EventBus.trigger(VisionAddTemplateEvent())
-
-        UIDispatcher.post(_do_add_template)
+        UIDispatcher.post(_do)
 
     def update_diagnostics_ui_state(self) -> None:
-        """Update the hotkey status UI variables based on registration state."""
-        def _do_update():
+        def _do():
             try:
-                # Determine current state
-                has_import_error = (
-                    hasattr(self.parent, "_hotkey_import_diag") and self.parent._hotkey_import_diag
-                )
-                has_failed_hotkeys = bool(self._failed_hotkeys)
-                hotkeys_enabled = self._hotkeys_registered_ok
-
+                has_failed = bool(self._failed_hotkeys)
+                enabled = self._hotkeys_registered_ok
                 lang = getattr(self.parent, "lang", "vi")
-
-                registered_count = len(self._registered_hotkey_handlers) if self._hotkeys_registered_ok else 0
-
-                state_controller = getattr(self.parent, "state_controller", None)
-                if not state_controller:
+                count = len(self._hotkey_callbacks) if enabled else 0
+                sc = getattr(self.parent, "state_controller", None)
+                if not sc:
                     return
-
-                # State 1: Success - All hotkeys registered
-                if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
-                    # Green success state
-                    success_text = (
-                        "All hotkeys registered successfully"
-                        if lang == "en"
-                        else "Tất cả phím tắt đã đăng ký thành công"
-                    )
-                    state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
-
-                    # Show count
-                    detail_text = (
-                        f"{registered_count} hotkeys active"
-                        if lang == "en"
-                        else f"{registered_count} phím tắt đang hoạt động"
-                    )
-                    state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
-
-                # State 2: Partial failure - Some hotkeys failed
-                elif has_failed_hotkeys and not has_import_error:
-                    # Orange warning state
-                    failed_count = len(self._failed_hotkeys)
-                    warning_text = (
-                        f"{failed_count} hotkey(s) failed to register"
-                        if lang == "en"
-                        else f"{failed_count} phím tắt đăng ký thất bại"
-                    )
-                    state_controller.set_ui_var('hotkey_status', f"{warning_text}")
-
-                    # Show guidance
-                    guidance = (
-                        "Try changing the conflicting hotkey, then click Apply."
-                        if lang == "en"
-                        else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
-                    )
-                    state_controller.set_ui_var('hotkey_status_detail', f"   {guidance}")
-
-                # State 3: Complete failure - Import error or no hotkeys registered
+                if enabled and not has_failed:
+                    txt = ("All hotkeys registered successfully"
+                           if lang == "en" else
+                           "Tất cả phím tắt đã đăng ký thành công")
+                    sc.set_ui_var('hotkey_status', f"✅ {txt}")
+                    detail = (f"{count} hotkeys active"
+                              if lang == "en" else
+                              f"{count} phím tắt đang hoạt động")
+                    sc.set_ui_var('hotkey_status_detail', f"   {detail}")
+                elif has_failed:
+                    sc.set_ui_var('hotkey_status', f"⚠️ {len(self._failed_hotkeys)} failed")
                 else:
-                    # Red error state
-                    error_text = (
-                        "Hotkeys not available"
-                        if lang == "en"
-                        else "Phím tắt không khả dụng"
-                    )
-                    state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
-
-                    # Show explanation
-                    if has_import_error:
-                        explanation = (
-                            "The 'pynput' package is not installed in your Python environment."
-                            if lang == "en"
-                            else "Gói 'pynput' chưa được cài đặt trong Python của bạn."
-                        )
-                    else:
-                        explanation = (
-                            "Failed to register global hotkeys."
-                            if lang == "en"
-                            else "Không thể đăng ký phím tắt toàn cục."
-                        )
-                    state_controller.set_ui_var('hotkey_status_detail', f"   {explanation}")
-
-            except Exception as e:
-                # Fallback: show basic error
-                try:
-                    state_controller = getattr(self.parent, "state_controller", None)
-                    if state_controller:
-                        state_controller.set_ui_var('hotkey_status', f"Error updating status: {e}")
-                except Exception:
-                    pass
-
-        UIDispatcher.post(_do_update)
+                    txt = ("Hotkeys not available"
+                           if lang == "en" else
+                           "Phím tắt không khả dụng")
+                    sc.set_ui_var('hotkey_status', f"❌ {txt}")
+            except Exception:
+                pass
+        UIDispatcher.post(_do)
