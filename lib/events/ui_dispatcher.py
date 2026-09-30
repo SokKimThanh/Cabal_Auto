@@ -1,3 +1,4 @@
+import threading
 import queue
 import tkinter as tk
 import logging
@@ -14,7 +15,7 @@ class UIDispatcher:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.queue = queue.Queue()
-        self._is_shutting_down = False
+        self._is_shutting_down = threading.Event()
         self._process_queue()
         UIDispatcher._instance = self
 
@@ -24,13 +25,13 @@ class UIDispatcher:
 
     @classmethod
     def post(cls, task):
-        if cls._instance and not cls._instance._is_shutting_down:
+        if cls._instance and not cls._instance._is_shutting_down.is_set():
             cls._instance.queue.put(task)
         else:
             logger.warning("[UIDispatcher] Dispatcher not initialized or shutting down, task dropped.")
 
     def _process_queue(self):
-        if self._is_shutting_down:
+        if self._is_shutting_down.is_set():
             return
 
         try:
@@ -45,8 +46,8 @@ class UIDispatcher:
         except queue.Empty:
             pass
         finally:
-            if not self._is_shutting_down:
+            if not self._is_shutting_down.is_set():
                 self.root.after(100, self._process_queue)
 
     def shutdown(self):
-        self._is_shutting_down = True
+        self._is_shutting_down.set()

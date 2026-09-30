@@ -58,7 +58,8 @@ class TaskScheduler:
             # Reschedule itself if still running and recurring is True
             if not self._is_shutting_down and recurring:
                 try:
-                    new_timer_id = self.root.root.after if hasattr(self.root, 'root') else self.root.after(interval_ms, _wrapper)
+                    tk_root = self.root.root if hasattr(self.root, 'root') else self.root
+                    new_timer_id = tk_root.after(interval_ms, _wrapper)
                     self._after_tasks[task_id] = new_timer_id
                 except Exception as e:
                     logger.error(f"[TaskScheduler] Failed to reschedule task '{task_id}': {e}")
@@ -67,7 +68,8 @@ class TaskScheduler:
                 self._after_tasks.pop(task_id, None)
 
         try:
-            timer_id = self.root.root.after if hasattr(self.root, 'root') else self.root.after(interval_ms, _wrapper)
+            tk_root = self.root.root if hasattr(self.root, 'root') else self.root
+            timer_id = tk_root.after(interval_ms, _wrapper)
             self._after_tasks[task_id] = timer_id
         except Exception as e:
             logger.error(f"[TaskScheduler] Failed to schedule task '{task_id}': {e}")
@@ -89,7 +91,8 @@ class TaskScheduler:
         timer_id = self._after_tasks.pop(task_id, None)
         if timer_id:
             try:
-                self.root.root.after if hasattr(self.root, 'root') else self.root.after_cancel(timer_id)
+                tk_root = self.root.root if hasattr(self.root, 'root') else self.root
+                tk_root.after_cancel(timer_id)
             except Exception:
                 # Swallow TclError or similar if the timer is already invalid
                 pass
@@ -101,16 +104,17 @@ class TaskScheduler:
         """
         self._is_shutting_down = True
 
+        tk_root = self.root.root if hasattr(self.root, 'root') else self.root
         for task_id, timer_id in list(self._after_tasks.items()):
             try:
-                self.root.root.after if hasattr(self.root, 'root') else self.root.after_cancel(timer_id)
+                tk_root.after_cancel(timer_id)
             except Exception:
                 pass
 
         self._after_tasks.clear()
         logger.info("[TaskScheduler] All timers cancelled.")
 
-    def run_in_thread(self, task_id: str, target: Callable, daemon: bool = True, **kwargs) -> threading.Thread:
+    def run_in_thread(self, task_id: str, target: Callable, daemon: bool = True, **kwargs) -> Optional[threading.Thread]:
         """
         Start a function in a background thread, optionally tracking it.
 
@@ -120,8 +124,12 @@ class TaskScheduler:
             daemon: Whether the thread should be marked as daemon. Defaults to True.
 
         Returns:
-            The created and started Thread object.
+            The created and started Thread object, or None if shutting down.
         """
+        if self._is_shutting_down:
+            logger.warning(f"[TaskScheduler] Shutting down, thread '{task_id}' not started")
+            return None
+
         def _thread_wrapper():
             try:
                 target(**kwargs)
@@ -133,8 +141,6 @@ class TaskScheduler:
 
         thread = threading.Thread(target=_thread_wrapper, daemon=daemon)
         self._threads[task_id] = thread
-
-        if not self._is_shutting_down:
-            thread.start()
+        thread.start()
 
         return thread
