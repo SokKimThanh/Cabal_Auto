@@ -1,5 +1,0 @@
-numpy
-pyautogui
-opencv-python
-pillow
-pynput==1.8.2
