@@ -74,13 +74,15 @@ def test_create_icon_label_with_tooltip(mock_icon_helper, tk_root):
     with patch(
         "ui.components.icon_button._attach_simple_tooltip"
     ) as mock_attach_tooltip:
-        label = create_icon_label(
-            parent=tk_root,
-            icon_name="info",
-            text="Info",
-            tooltip_text="This is a tooltip",
-        )
-        mock_attach_tooltip.assert_called_once_with(label, "This is a tooltip")
+        with patch("ui.components.icon_button.icon_helper.get_icon_tooltip_key") as mock_get_key:
+            mock_get_key.return_value = None
+            label = create_icon_label(
+                parent=tk_root,
+                icon_name="info",
+                text="Info",
+                tooltip_text="This is a tooltip",
+            )
+            mock_attach_tooltip.assert_called_once_with(label, "This is a tooltip")
 
 
 @patch("ui.components.icon_button.icon_helper")
@@ -89,19 +91,21 @@ def test_create_icon_label_with_tooltip_key(mock_icon_helper, tk_root):
     mock_icon_helper.get_icon.return_value = "?"
 
     with patch("ui.components.icon_button.attach_i18n_tooltip") as mock_attach_tooltip:
-        label = create_icon_label(
-            parent=tk_root,
-            icon_name="info",
-            text="Info",
-            tooltip_key="info_key",
-            tooltip_ns="info_ns",
-        )
-        mock_attach_tooltip.assert_called_once()
-        args, kwargs = mock_attach_tooltip.call_args
-        assert args[0] == label
-        assert args[1] == "info_key"
-        assert kwargs["ns"] == "info_ns"
-        assert "lang_provider" in kwargs
+        with patch("ui.components.icon_button.icon_helper.get_icon_tooltip_key") as mock_get_key:
+            mock_get_key.return_value = "info_key"
+            label = create_icon_label(
+                parent=tk_root,
+                icon_name="info",
+                text="Info",
+                tooltip_key="info_key",
+                tooltip_ns="info_ns",
+            )
+            mock_attach_tooltip.assert_called_once()
+            args, kwargs = mock_attach_tooltip.call_args
+            assert args[0] == label
+            assert args[1] == "info_key"
+            assert kwargs["ns"] == "info_ns"
+            assert "lang_provider" in kwargs
 
 
 @patch("ui.components.icon_button.icon_helper")
