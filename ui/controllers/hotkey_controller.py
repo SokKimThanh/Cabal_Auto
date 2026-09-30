@@ -352,18 +352,22 @@ class HotkeyController:
                 pass
 
     def on_vision_wizard(self, *_args) -> None:
-        if (
-            hasattr(self.parent, "monster_manager_controller")
-            and self.parent.monster_manager_controller
-        ):
-            UIDispatcher.post(self.parent.window_controller.open_vision_wizard)
+        def _do_vision_wizard():
+            if (
+                hasattr(self.parent, "monster_manager_controller")
+                and self.parent.monster_manager_controller
+            ):
+                self.parent.window_controller.open_vision_wizard()
+        UIDispatcher.post(_do_vision_wizard)
 
     def on_monster_editor(self, *_args) -> None:
-        if (
-            hasattr(self.parent, "monster_manager_controller")
-            and self.parent.monster_manager_controller
-        ):
-            UIDispatcher.post(self.parent.monster_manager_controller.open_window)
+        def _do_monster_editor():
+            if (
+                hasattr(self.parent, "monster_manager_controller")
+                and self.parent.monster_manager_controller
+            ):
+                self.parent.monster_manager_controller.open_window()
+        UIDispatcher.post(_do_monster_editor)
 
     def on_setup_wizard(self, *_args) -> None:
         def _do_setup_wizard():
@@ -466,150 +470,162 @@ class HotkeyController:
         UIDispatcher.post(_do_library_manager)
 
     def on_hunt_start(self, *_args) -> None:
-        if hasattr(self.parent, "on_hunt_start"):
-            UIDispatcher.post(self.parent.on_hunt_start)
+        def _do_hunt_start():
+            if hasattr(self.parent, "on_hunt_start"):
+                self.parent.on_hunt_start()
+        UIDispatcher.post(_do_hunt_start)
 
     def on_hunt_stop(self, *_args) -> None:
-        if hasattr(self.parent, "on_hunt_stop"):
-            UIDispatcher.post(self.parent.on_hunt_stop)
+        def _do_hunt_stop():
+            if hasattr(self.parent, "on_hunt_stop"):
+                self.parent.on_hunt_stop()
+        UIDispatcher.post(_do_hunt_stop)
 
 
     def on_build_manager(self, *_args) -> None:
-        if hasattr(self.parent, "switch_view"):
-            UIDispatcher.post(lambda: self.parent.switch_view("build_manager"))
+        def _do_build_manager():
+            if hasattr(self.parent, "switch_view"):
+                self.parent.switch_view("build_manager")
+        UIDispatcher.post(_do_build_manager)
 
     def on_add_template(self, *_args) -> None:
-        import os
-        from lib.system.window_manager import WindowManager
-        from lib.events.event_bus import EventBus, VisionAddTemplateEvent
+        def _do_add_template():
+            import os
+            from lib.system.window_manager import WindowManager
+            from lib.events.event_bus import EventBus, VisionAddTemplateEvent
 
-        wm = WindowManager()
-        fg_hwnd = wm.get_foreground_window()
-        if fg_hwnd:
-            info = wm.get_window_info(fg_hwnd)
-            if info:
-                app_pid = os.getpid()
-                if info.pid == app_pid:
-                    EventBus.trigger(VisionAddTemplateEvent())
+            wm = WindowManager()
+            fg_hwnd = wm.get_foreground_window()
+            if fg_hwnd:
+                info = wm.get_window_info(fg_hwnd)
+                if info:
+                    app_pid = os.getpid()
+                    if info.pid == app_pid:
+                        EventBus.trigger(VisionAddTemplateEvent())
+                        return
+
+                    # Check if it matches configured cabal window
+                    target_hwnd = None
+                    if hasattr(self.parent, "state_controller"):
+                        target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
+
+                    if target_hwnd and info.hwnd == target_hwnd:
+                        EventBus.trigger(VisionAddTemplateEvent())
+                        return
+
+                    # If neither the bot app nor the target game, ignore the hotkey
+                    print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
                     return
 
-                # Check if it matches configured cabal window
-                target_hwnd = None
-                if hasattr(self.parent, "state_controller"):
-                    target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
+            EventBus.trigger(VisionAddTemplateEvent())
 
-                if target_hwnd and info.hwnd == target_hwnd:
-                    EventBus.trigger(VisionAddTemplateEvent())
-                    return
-
-                # If neither the bot app nor the target game, ignore the hotkey
-                print(f"[Hotkeys] Add Template blocked: Active window (PID: {info.pid}, HWND: {info.hwnd}) is not the tool or game.")
-                return
-
-        EventBus.trigger(VisionAddTemplateEvent())
+        UIDispatcher.post(_do_add_template)
 
     def update_diagnostics_ui_state(self) -> None:
         """Update the hotkey status UI variables based on registration state."""
-        try:
-            # Determine current state
-            has_import_error = (
-                hasattr(self.parent, "_hotkey_import_diag") and self.parent._hotkey_import_diag
-            )
-            has_failed_hotkeys = bool(self._failed_hotkeys)
-            hotkeys_enabled = self._hotkeys_registered_ok
-
-            lang = getattr(self.parent, "lang", "vi")
-
-            # Count actual registered hotkeys (not bindings)
-            registered_count = 0
-            hotkey_details = []
-
-            if self._global_start_hotkey is not None:
-                registered_count += 1
-                hotkey_details.append("Start" if lang == "en" else "Bắt đầu")
-            if self._global_stop_hotkey is not None:
-                registered_count += 1
-                hotkey_details.append("Stop" if lang == "en" else "Dừng")
-            if self._global_library_hotkey is not None:
-                registered_count += 1
-                hotkey_details.append("Library" if lang == "en" else "Thư viện")
-            if self._global_vision_hotkey is not None:
-                registered_count += 1
-                hotkey_details.append("Vision" if lang == "en" else "Thị giác")
-
-            state_controller = getattr(self.parent, "state_controller", None)
-            if not state_controller:
-                return
-
-            # State 1: Success - All hotkeys registered
-            if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
-                # Green success state
-                success_text = (
-                    "All hotkeys registered successfully"
-                    if lang == "en"
-                    else "Tất cả phím tắt đã đăng ký thành công"
-                )
-                state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
-
-                # Show count and active hotkeys list
-                detail_text = (
-                    f"{registered_count} hotkeys active"
-                    if lang == "en"
-                    else f"{registered_count} phím tắt đang hoạt động"
-                )
-                if hotkey_details:
-                    detail_text += f": {', '.join(hotkey_details)}"
-                state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
-
-            # State 2: Partial failure - Some hotkeys failed
-            elif has_failed_hotkeys and not has_import_error:
-                # Orange warning state
-                failed_count = len(self._failed_hotkeys)
-                warning_text = (
-                    f"{failed_count} hotkey(s) failed to register"
-                    if lang == "en"
-                    else f"{failed_count} phím tắt đăng ký thất bại"
-                )
-                state_controller.set_ui_var('hotkey_status', f"{warning_text}")
-
-                # Show guidance
-                guidance = (
-                    "Try changing the conflicting hotkey, then click Apply."
-                    if lang == "en"
-                    else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
-                )
-                state_controller.set_ui_var('hotkey_status_detail', f"   {guidance}")
-
-            # State 3: Complete failure - Import error or no hotkeys registered
-            else:
-                # Red error state
-                error_text = (
-                    "Hotkeys not available"
-                    if lang == "en"
-                    else "Phím tắt không khả dụng"
-                )
-                state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
-
-                # Show explanation
-                if has_import_error:
-                    explanation = (
-                        "The 'keyboard' package is not installed in your Python environment."
-                        if lang == "en"
-                        else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
-                    )
-                else:
-                    explanation = (
-                        "Failed to register global hotkeys."
-                        if lang == "en"
-                        else "Không thể đăng ký phím tắt toàn cục."
-                    )
-                state_controller.set_ui_var('hotkey_status_detail', f"   {explanation}")
-
-        except Exception as e:
-            # Fallback: show basic error
+        def _do_update():
             try:
+                # Determine current state
+                has_import_error = (
+                    hasattr(self.parent, "_hotkey_import_diag") and self.parent._hotkey_import_diag
+                )
+                has_failed_hotkeys = bool(self._failed_hotkeys)
+                hotkeys_enabled = self._hotkeys_registered_ok
+
+                lang = getattr(self.parent, "lang", "vi")
+
+                # Count actual registered hotkeys (not bindings)
+                registered_count = 0
+                hotkey_details = []
+
+                if self._global_start_hotkey is not None:
+                    registered_count += 1
+                    hotkey_details.append("Start" if lang == "en" else "Bắt đầu")
+                if self._global_stop_hotkey is not None:
+                    registered_count += 1
+                    hotkey_details.append("Stop" if lang == "en" else "Dừng")
+                if self._global_library_hotkey is not None:
+                    registered_count += 1
+                    hotkey_details.append("Library" if lang == "en" else "Thư viện")
+                if self._global_vision_hotkey is not None:
+                    registered_count += 1
+                    hotkey_details.append("Vision" if lang == "en" else "Thị giác")
+
                 state_controller = getattr(self.parent, "state_controller", None)
-                if state_controller:
-                    state_controller.set_ui_var('hotkey_status', f"Error updating status: {e}")
-            except Exception:
-                pass
+                if not state_controller:
+                    return
+
+                # State 1: Success - All hotkeys registered
+                if hotkeys_enabled and not has_failed_hotkeys and not has_import_error:
+                    # Green success state
+                    success_text = (
+                        "All hotkeys registered successfully"
+                        if lang == "en"
+                        else "Tất cả phím tắt đã đăng ký thành công"
+                    )
+                    state_controller.set_ui_var('hotkey_status', f"✅ {success_text}")
+
+                    # Show count and active hotkeys list
+                    detail_text = (
+                        f"{registered_count} hotkeys active"
+                        if lang == "en"
+                        else f"{registered_count} phím tắt đang hoạt động"
+                    )
+                    if hotkey_details:
+                        detail_text += f": {', '.join(hotkey_details)}"
+                    state_controller.set_ui_var('hotkey_status_detail', f"   {detail_text}")
+
+                # State 2: Partial failure - Some hotkeys failed
+                elif has_failed_hotkeys and not has_import_error:
+                    # Orange warning state
+                    failed_count = len(self._failed_hotkeys)
+                    warning_text = (
+                        f"{failed_count} hotkey(s) failed to register"
+                        if lang == "en"
+                        else f"{failed_count} phím tắt đăng ký thất bại"
+                    )
+                    state_controller.set_ui_var('hotkey_status', f"{warning_text}")
+
+                    # Show guidance
+                    guidance = (
+                        "Try changing the conflicting hotkey, then click Apply."
+                        if lang == "en"
+                        else "Thử đổi phím tắt bị xung đột, sau đó nhấn Áp dụng."
+                    )
+                    state_controller.set_ui_var('hotkey_status_detail', f"   {guidance}")
+
+                # State 3: Complete failure - Import error or no hotkeys registered
+                else:
+                    # Red error state
+                    error_text = (
+                        "Hotkeys not available"
+                        if lang == "en"
+                        else "Phím tắt không khả dụng"
+                    )
+                    state_controller.set_ui_var('hotkey_status', f"❌ {error_text}")
+
+                    # Show explanation
+                    if has_import_error:
+                        explanation = (
+                            "The 'keyboard' package is not installed in your Python environment."
+                            if lang == "en"
+                            else "Gói 'keyboard' chưa được cài đặt trong Python của bạn."
+                        )
+                    else:
+                        explanation = (
+                            "Failed to register global hotkeys."
+                            if lang == "en"
+                            else "Không thể đăng ký phím tắt toàn cục."
+                        )
+                    state_controller.set_ui_var('hotkey_status_detail', f"   {explanation}")
+
+            except Exception as e:
+                # Fallback: show basic error
+                try:
+                    state_controller = getattr(self.parent, "state_controller", None)
+                    if state_controller:
+                        state_controller.set_ui_var('hotkey_status', f"Error updating status: {e}")
+                except Exception:
+                    pass
+
+        UIDispatcher.post(_do_update)
