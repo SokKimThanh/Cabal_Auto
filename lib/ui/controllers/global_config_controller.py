@@ -61,7 +61,7 @@ class GlobalConfigController:
 
                 self.state_controller.hunt_cfg = cfg  # Update instance config first
                 self.hotkey_controller.unregister_all()
-                self.hotkey_controller.register_all()
+                self.hotkey_controller.register_all(force=True)
 
             if not save_hunt_config(cfg):
                 raise RuntimeError("Could not save hunt configuration")

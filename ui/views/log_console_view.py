@@ -160,6 +160,16 @@ class LogConsoleView(tk.Frame):
             self.app.task_scheduler.schedule_recurring_task("poll_log_queue", 100, self._poll_log_queue)
             self.app.task_scheduler.schedule_recurring_task("update_logs_metrics", 1000, self._update_logs_metrics)
 
+    def destroy(self):
+        """Cancel recurring polling tasks before destroying the widget."""
+        try:
+            if hasattr(self.app, "task_scheduler") and self.app.task_scheduler:
+                self.app.task_scheduler.cancel_task("poll_log_queue")
+                self.app.task_scheduler.cancel_task("update_logs_metrics")
+        except Exception:
+            pass
+        super().destroy()
+
     def append_message(self, message: str, levelname: str = "INFO"):
         """Appends a message to the text widget and auto-scrolls to the bottom."""
         # Level filtering

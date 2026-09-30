@@ -331,225 +331,16 @@ class App:
     def _register_lifecycle_events(self):
         from ui.theme.ttk_theme import configure_ttk_styles
         configure_ttk_styles(self.root)
-        self.hotkey_controller.register_all()
+
+        # Idempotency guard: register hotkeys only once per process
+        if not getattr(self, "_hotkeys_registered", False):
+            self.hotkey_controller.register_all()
+            self._hotkeys_registered = True
+        else:
+            print("[Hotkeys] Already registered, skipping re-registration")
+
         self.lifecycle_controller = AppLifecycleController(self)
         self.lifecycle_controller.start_lifecycle()
-        if hasattr(self, 'di_container') and self.di_container:
-            self.monster_library_service = getattr(self.di_container, "monster_library_service", None)
-            self.skill_service = getattr(self.di_container, "skill_service", None)
-            self.db_skill_service = getattr(self.di_container, "db_skill_service", None)
-            self.db_skill_type_service = getattr(self.di_container, "db_skill_type_service", None)
-            self.db_class_service = getattr(self.di_container, "db_class_service", None)
-            self.db_scan_service = getattr(self.di_container, "db_scan_service", None)
-            self.overlay_controller = getattr(self.di_container, "overlay_controller", None)
-            self.skill_caster_service = getattr(self.di_container, "skill_caster_service", None)
-            self.scan_controller = getattr(self.di_container, "scan_controller", None)
-
-        self.has_unsaved_changes = False
-        self._btn_scan_ref = None
-        self._action_locked = False
-
-        self.monster_selected_index = None
-        self.translation_binder = TranslationBinder()
-
-        try:
-            self._is_destroyed = False
-            DialogService.set_default_parent(self.root)
-            self._last_height_under_900 = False
-
-            # Initialize State Controller early
-            from ui.controllers.app_state_controller import AppStateController
-            self.state_controller = AppStateController(self.root)
-
-            # Startup Protection: Ensure translations exist in DB before loading UI
-            from lib.db.services.translation_service import TranslationService
-            from lib.db.services.translation_sync_manager import TranslationSyncManager
-
-            db_record_count = TranslationService().get_total_count()
-            if db_record_count == 0:
-                TranslationSyncManager.seed_initial_data()
-
-            # Load from DB to memory
-            import lib.i18n
-            lib.i18n.load_from_db()
-
-            # Load config and language
-            self.cfg = load_config()
-            self.state_controller.hunt_cfg = load_hunt_config()
-            self.lang = str(self.cfg.get("ui", {}).get("language", "vi"))
-            try:
-                i18n_set_lang(self.lang)
-            except Exception:
-                pass
-            try:
-                i18n_set_lang(self.lang)
-            except Exception:
-                pass
-
-            self.hotkey_controller = HotkeyController(self, self.state_controller.hunt_cfg)
-            # Centralized icon helper
-            try:
-                from ui.helpers.icon_helper import get_icon_helper
-                from ui.icon_library import register_icons
-
-                self.icon_helper = get_icon_helper()
-                register_icons(self.icon_helper)
-            except Exception:
-                self.icon_helper = None
-
-            EventBus.bind(IconUpdatedEvent, self.on_icon_updated)
-
-            # Create config manager for wizard
-            self.root.config_mgr = ConfigManager(self.cfg, self.state_controller.hunt_cfg)
-
-            from ui.components.app_shell import AppShell
-            self.shell = AppShell(root=self.root, app=self)
-            self.shell.build()
-        except Exception as e:
-            print(f"[App.__init__] Error in early init: {e}")
-            import traceback
-            traceback.print_exc()
-            raise
-
-        # Initialize ScanController
-
-
-
-
-        # State Bookkeeping Extracted
-        from ui.controllers.app_window_controller import AppWindowController
-        from ui.controllers.window_tracker_controller import WindowTrackerController
-
-
-
-        self.skill_config_view = SkillConfigView(self.state_controller)
-        self.state_controller._collect_skill_slots_func = getattr(self.skill_config_view, '_collect_skill_slots', None)
-        self.state_controller.ui_widgets['unsaved_indicator_func'] = getattr(self, '_update_unsaved_indicator', None)
-        self.window_controller = AppWindowController(self)
-        self.window_tracker_controller = WindowTrackerController(self)
-        self.overlay_ctrl = None
-        self.hunt_controller = None
-        self._detected_snapshot_items = []
-        self._last_snapshot = None
-        self.task_scheduler = TaskScheduler(self)
-
-        # --- Event Bus Bindings ---
-        EventBus.bind(HuntStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_status', e.status)))
-        EventBus.bind(HuntStateChangedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self._on_orchestrator_state_change(e.state)))
-        EventBus.bind(TargetHpUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_hp_display(e.hp_percent) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_hp_display') else None))
-        EventBus.bind(TargetStatusUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.tab_hunt.update_status(e.status) if hasattr(self, 'tab_hunt') and hasattr(self.tab_hunt, 'update_status') else None))
-        EventBus.bind(TargetInfoUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: self.state_controller.set_ui_var('hunt_target_info', e.info)))
-        EventBus.bind(ClearTargetUIEvent, lambda e: self.task_scheduler.schedule_task(None, 0, self.clear_target_ui))
-        EventBus.bind(SkillStatsUpdatedEvent, lambda e: self.task_scheduler.schedule_task(None, 0, lambda: getattr(self, 'update_skill_stats_display', lambda _: None)(e.stats)))
-        EventBus.bind(LanguageChangedEvent, self.on_language_change)
-        EventBus.bind(TranslationDataUpdatedEvent, self.on_translation_updated)
-
-        from lib.ui.controllers.global_config_controller import GlobalConfigController
-        self.global_config_controller = GlobalConfigController(self.state_controller, self.hotkey_controller, self._t, app_instance=self)
-        EventBus.bind(GlobalApplyEvent, lambda e: self.global_config_controller.apply_all_configs())
-
-        from lib.ui.controllers.monster_rotation_controller import MonsterRotationController
-        if hasattr(self, 'di_container') and self.di_container and hasattr(self.di_container, "monster_rotation_controller") and self.di_container.monster_rotation_controller:
-            self.monster_rotation_controller = self.di_container.monster_rotation_controller
-        else:
-            self.monster_rotation_controller = MonsterRotationController(self.state_controller)
-        self.monster_rotation_controller.bind_events()
-        EventBus.bind(StartStopHuntEvent, lambda e: self.hunt_controller.on_start_stop_clicked())
-
-        # Instantiate the MenuVisionController to handle vision menu events
-        from lib.ui.controllers.menu_vision_controller import MenuVisionController
-        self.menu_vision_controller = MenuVisionController(app=self, window_controller=self.window_controller)
-
-        self.state_controller.hunt_selected = {}
-
-        # Check PIL availability (for image preview features)
-        self.pil_available = (
-            Image is not None and ImageTk is not None and ImageDraw is not None
-        )
-
-        if hasattr(self, "monster_library_service") and self.monster_library_service:
-            self.monsters = self.monster_library_service.load_monsters()
-        else:
-            self.monsters = []
-
-        if hasattr(self, "skill_service") and self.skill_service:
-            self.monsters = self.skill_service._normalize_library_items(self.monsters)
-
-        self.monster_selected_name = self.monsters[0].get("name", "Unknown") if self.monsters else None
-
-        # Phase 3: Multi-Monster Support
-        self.state_controller.monster_rotation = []
-        if hasattr(self, 'monster_rotation_controller') and self.monster_rotation_controller:
-            self.monster_rotation_controller.load_monster_rotation_list()
-
-        skills = self.skill_service.get_all_skills() if hasattr(self, "skill_service") and self.skill_service else []
-        self.skill_selected_name = skills[0].get("name", "Unknown") if skills else None
-        self.skill_slot_saved_names = [
-            slot.get("name", "")
-            for slot in self.state_controller.hunt_cfg.get("skill_slots", [])
-            if isinstance(slot, dict) and slot.get("name")
-        ]
-        self.monster_template_working = []
-        self.monster_template_selected_index = None
-        self.state_controller.ui_widgets['monster_template_listbox'] = None
-        self.state_controller.monster_template_region_vars = {
-            "left": tk.StringVar(),
-            "top": tk.StringVar(),
-            "width": tk.StringVar(),
-            "height": tk.StringVar(),
-        }
-        self.state_controller.ui_widgets['monster_template_preview_label'] = None
-        self.state_controller.ui_widgets['monster_template_preview_image'] = None
-        self._monster_template_path_trace = None
-        self._thumbnail_cache = {}  # path -> PhotoImage cache
-        self.state_controller.monster_bounds_vars = {
-            "left": tk.StringVar(),
-            "top": tk.StringVar(),
-            "width": tk.StringVar(),
-            "height": tk.StringVar(),
-        }
-
-        # Configuration is already migrated during load_hunt_config
-
-        safe_area = get_valid_hunt_area(self.state_controller.hunt_cfg)
-        self.state_controller.hunt_cfg["hunt_area"] = safe_area
-        self.state_controller.current_window_bounds = safe_area.get("window_bounds")
-        WindowSelectionService.update_bounds(self.state_controller.hunt_cfg, self.state_controller.current_window_bounds)
-
-        if pyautogui is not None:
-            pyautogui.FAILSAFE = bool(self.cfg.get("safety", {}).get("failsafe", True))
-
-        # Initialize window selection state
-        self.state_controller.win_items = []
-        self.win_items_map = {}
-
-        self.hunt_runner = self.di_container.hunt_runner if hasattr(self, 'di_container') and self.di_container else None
-
-        self.hunt_orchestrator = self.di_container.hunt_orchestrator if hasattr(self, 'di_container') and self.di_container else None
-
-        # Keyboard shortcuts (Window-focused only)
-        self.root.bind("<Control-b>", lambda e: self.navigation.navigate_to("build_manager"))
-        self.root.bind("<Control-m>", lambda e: self.navigation.navigate_to("monster_manager"))
-        self.root.bind("<Control-k>", lambda e: self.navigation.navigate_to("skill_manager"))
-        self.root.bind("<Control-l>", lambda e: self.navigation.navigate_to("language_manager"))
-
-        self.root.bind("<Alt-Key-1>", lambda e: self.navigation.navigate_to("hunt"))  # Alt+1: Hunt tab
-        self.root.bind(
-            "<Alt-Key-2>", lambda e: self.navigation.navigate_to("setup")
-        )  # Alt+2: Setup tab
-
-        # Responsive layout bindings
-        self.root.bind("<Configure>", self._on_window_configure)
-
-        from ui.theme.ttk_theme import configure_ttk_styles
-
-        configure_ttk_styles(self.root)
-
-        self.hotkey_controller.register_all()
-        self.lifecycle_controller = AppLifecycleController(self)
-        self.lifecycle_controller.start_lifecycle()
-
-        # Register for skill key updates
 
     # -----------------
 
@@ -926,11 +717,12 @@ class App:
             print(f"Tab switch error: {e}")
 
     def _update_hotkeys_state(self):
-        """Update hotkey state.
-        Called when Global hotkeys are re-registered.
-        """
-        if hasattr(self.state_controller, "hunt_cfg"):
-            self.hotkey_controller.register_all()
+        """Refresh hotkey diagnostics UI. Does NOT re-register hotkeys."""
+        if hasattr(self, "hotkey_controller") and self.hotkey_controller:
+            try:
+                self.hotkey_controller.update_diagnostics_ui_state()
+            except Exception:
+                pass
 
     def _on_orchestrator_state_change(self, state: str):
         if state == "running":
