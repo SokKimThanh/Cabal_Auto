@@ -247,6 +247,7 @@ class AppLifecycleController:
                     pass
                 setattr(self.app, attr_name, None)
 
+        self.cleanup_before_destroy()
         self.app.root.destroy()
 
     def cleanup_before_destroy(self) -> None:
@@ -270,20 +271,20 @@ class AppLifecycleController:
             except Exception:
                 pass
 
-        # Unregister global hotkeys on exit
-        if keyboard is not None and hasattr(self.app, "_registered_hotkey_handlers"):
-            for hk, handler in list(self.app._registered_hotkey_handlers.items()):
-                try:
-                    # keyboard.remove_hotkey accepts either the hotkey string or the handler id/function
-                    keyboard.remove_hotkey(handler)
-                except Exception:
-                    try:
-                        keyboard.remove_hotkey(hk)
-                    except Exception:
-                        pass
-
-        if hasattr(self.app, "_unregister_global_hotkeys"):
+        # Unregister hotkeys via the proper controller
+        if hasattr(self.app, "hotkey_controller") and self.app.hotkey_controller:
             try:
-                self.app._unregister_global_hotkeys()
+                self.app.hotkey_controller.unregister_all()
+            except Exception as e:
+                print(f"[Shutdown] hotkey unregister error: {e}")
+
+        # Safety net: remove any remaining hooks
+        if keyboard is not None:
+            try:
+                keyboard.unhook_all_hotkeys()
+            except Exception:
+                pass
+            try:
+                keyboard.unhook_all()
             except Exception:
                 pass

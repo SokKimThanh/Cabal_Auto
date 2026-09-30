@@ -21,6 +21,7 @@ class HotkeyController:
         self._global_vision_hotkey = None
         self._global_monster_hotkey = None
         self._global_build_hotkey = None
+        self._global_add_template_hotkey = None
 
         # Track fallback tkinter bindings
         self._hotkey_fallback_bound = []
@@ -343,6 +344,14 @@ class HotkeyController:
                     print(f"Error unregistering build hotkey: {e}")
                 finally:
                     self._global_build_hotkey = None
+
+            if self._global_add_template_hotkey is not None:
+                try:
+                    keyboard.remove_hotkey(self._global_add_template_hotkey)
+                except Exception as e:
+                    print(f"Error unregistering add template hotkey: {e}")
+                finally:
+                    self._global_add_template_hotkey = None
         except Exception as e:
             print(f"Error in unregister_all: {e}")
             try:

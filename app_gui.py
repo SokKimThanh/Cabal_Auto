@@ -1133,24 +1133,11 @@ class App:
     # ==========================================
 
     def on_close(self):
-        self._shutdown_runtime()
-
-    def _shutdown_runtime(self):
+        if getattr(self, "_is_destroyed", False):
+            return
+        self._is_destroyed = True
         self.lifecycle_controller.on_close()
 
-    def destroy(self):
-        self._cleanup_resources()
-
-    def _cleanup_resources(self):
-        self._is_destroyed = True
-        self.lifecycle_controller.cleanup_before_destroy()
-        if hasattr(self, "monster_rotation_controller"):
-            self.monster_rotation_controller.unbind_events()
-        if hasattr(self, "task_scheduler"):
-            self.task_scheduler.cancel_all()
-        if hasattr(self, 'ui_dispatcher'):
-            self.ui_dispatcher.shutdown()
-        self.root.destroy()
     def _create_icon_button(
         self,
         parent,
