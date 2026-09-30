@@ -183,7 +183,7 @@ class App:
         self.cfg = load_config()
         self.state_controller.hunt_cfg = load_hunt_config()
 
-        self.hotkey_controller = HotkeyController(self, self.state_controller.hunt_cfg)
+        self.hotkey_controller = HotkeyController(self)
 
         from ui.controllers.app_window_controller import AppWindowController
         from ui.controllers.window_tracker_controller import WindowTrackerController
