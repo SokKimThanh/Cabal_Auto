@@ -1,5 +1,4 @@
 # Main dependencies for Cabal_Auto project
-# For detailed UI dependencies, see ui/requirements.txt
 
 # Computer Vision & Image Processing
 opencv-python-headless>=4.8.0
