@@ -3,6 +3,7 @@ import threading
 import traceback
 import logging
 from lib.events.event_bus import EventBus
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import Event
 
 from lib.utils.template_storage import TemplateStorageManager
@@ -233,5 +234,5 @@ class ScanController:
             try:
                 worker()
             finally:
-                EventBus.trigger(ScanCompletedEvent())
+                UIDispatcher.post(lambda: EventBus.trigger(ScanCompletedEvent()))
         threading.Thread(target=worker_wrapper, daemon=True).start()

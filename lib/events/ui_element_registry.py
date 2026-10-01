@@ -53,7 +53,8 @@ class UIElementRegistry:
 
         if is_new:
             from lib.events.event_bus import EventBus, UIElementRegisteredEvent
-            EventBus.trigger(UIElementRegisteredEvent(descriptor))
+            from lib.events.ui_dispatcher import UIDispatcher
+            UIDispatcher.post(lambda: EventBus.trigger(UIElementRegisteredEvent(descriptor)))
 
     def get_all(self) -> List[UIElementDescriptor]:
         return list(self._elements.values())

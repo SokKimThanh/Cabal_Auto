@@ -1,5 +1,6 @@
 import tkinter as tk
 from lib.features.hunt.hunt_config import save_hunt_config
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, VisionScanRegionEvent, VisionAddTemplateEvent, VisionManageTemplatesEvent
 
 class MainMenuBar(tk.Menu):
@@ -153,13 +154,13 @@ class MainMenuBar(tk.Menu):
         print("[Vision Menu] Created successfully")
 
     def _scan_region(self):
-        EventBus.trigger(VisionScanRegionEvent())
+        UIDispatcher.post(lambda: EventBus.trigger(VisionScanRegionEvent()))
 
     def _add_template(self):
-        EventBus.trigger(VisionAddTemplateEvent())
+        UIDispatcher.post(lambda: EventBus.trigger(VisionAddTemplateEvent()))
 
     def _manage_templates(self):
-        EventBus.trigger(VisionManageTemplatesEvent())
+        UIDispatcher.post(lambda: EventBus.trigger(VisionManageTemplatesEvent()))
 
     def _toggle_overlay(self):
         if self.overlay_controller:

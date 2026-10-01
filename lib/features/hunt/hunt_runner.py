@@ -1,4 +1,5 @@
 from lib.events.event_bus import EventBus, HuntStatusUpdatedEvent
+from lib.events.ui_dispatcher import UIDispatcher
 import time
 import threading
 
@@ -123,4 +124,4 @@ class HuntRunner:
         return None, 0, ""
 
     def _update_status(self, text: str) -> None:
-        EventBus.trigger(HuntStatusUpdatedEvent(text))
+        UIDispatcher.post(lambda: EventBus.trigger(HuntStatusUpdatedEvent(text)))

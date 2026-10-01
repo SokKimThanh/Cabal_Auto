@@ -5,6 +5,7 @@ from typing import Dict, List, Any, Optional
 
 
 from lib.events.event_bus import EventBus, SceneMonstersDetectedEvent
+from lib.events.ui_dispatcher import UIDispatcher
 
 
 class RuntimeMonsterQueue:
@@ -161,7 +162,7 @@ class RuntimeMonsterQueue:
                     "timestamp": item["last_seen"]
                 })
 
-            EventBus.trigger(SceneMonstersDetectedEvent(lightweight_snapshot))
+            UIDispatcher.post(lambda: EventBus.trigger(SceneMonstersDetectedEvent(lightweight_snapshot)))
 
             # Keep legacy callback for compatibility if needed, but EventBus is preferred
             if self.publish_callback and schedule_ui_task_fn:
