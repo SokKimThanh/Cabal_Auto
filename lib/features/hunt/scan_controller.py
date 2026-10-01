@@ -38,8 +38,8 @@ class ScanController:
     def run_scan(self, manual: bool = False):
         if manual:
             self.logger.info("[UI] Manual scan triggered.")
-            self.set_status_text("Đang quét…")
-            self.set_status_icon(self.icons.SCANNING)
+            UIDispatcher.post(lambda: self.set_status_text("Đang quét…"))
+            UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCANNING))
             self.logger.info("[UI] Scan status: scanning")
 
         def worker():
@@ -86,10 +86,8 @@ class ScanController:
                         "[AutoScan] Warning: Game window not connected. Skipping scan."
                     )
                     if manual:
-                        self.set_status_text(
-                            "❌ Lỗi khi quét: Game window chưa kết nối."
-                        )
-                        self.set_status_icon(self.icons.SCAN_FAILED)
+                        UIDispatcher.post(lambda: self.set_status_text("❌ Lỗi khi quét: Game window chưa kết nối."))
+                        UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_FAILED))
                         self.logger.info("[UI] Scan status: failed")
                     return
 
@@ -102,8 +100,8 @@ class ScanController:
                         "[AutoScan] Warning: DB not ready. Skipping scan creation."
                     )
                     if manual:
-                        self.set_status_text("❌ Lỗi khi quét: DB chưa sẵn sàng.")
-                        self.set_status_icon(self.icons.SCAN_FAILED)
+                        UIDispatcher.post(lambda: self.set_status_text("❌ Lỗi khi quét: DB chưa sẵn sàng."))
+                        UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_FAILED))
                         self.logger.info("[UI] Scan status: failed")
                     return
 
@@ -194,22 +192,16 @@ class ScanController:
                 self.logger.info("[AutoScan] Scan completed successfully.")
 
                 if manual:
-                    self.set_status_text("✅ Quét hoàn tất")
-                    self.set_status_icon(self.icons.SCAN_COMPLETE)
+                    UIDispatcher.post(lambda: self.set_status_text("✅ Quét hoàn tất"))
+                    UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_COMPLETE))
                     self.logger.info("[UI] Scan status: completed")
-                    import tkinter as tk
-
-                    root = tk._default_root
-                    if root:
-                        root.after(0, lambda: self.show_results(results))
-                    else:
-                        self.show_results(results)
+                    UIDispatcher.post(lambda: self.show_results(results))
 
                     def restore_icon():
                         import time
 
                         time.sleep(3)
-                        self.set_status_icon(self.icons.SCAN_SCREEN)
+                        UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_SCREEN))
 
                     threading.Thread(target=restore_icon, daemon=True).start()
 
@@ -218,15 +210,15 @@ class ScanController:
                     f"[AutoScan] Exception during scan: {e}\n{traceback.format_exc()}"
                 )
                 if manual:
-                    self.set_status_text("❌ Lỗi khi quét")
-                    self.set_status_icon(self.icons.SCAN_FAILED)
+                    UIDispatcher.post(lambda: self.set_status_text("❌ Lỗi khi quét"))
+                    UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_FAILED))
                     self.logger.info("[UI] Scan status: failed")
 
                     def restore_icon():
                         import time
 
                         time.sleep(3)
-                        self.set_status_icon(self.icons.SCAN_SCREEN)
+                        UIDispatcher.post(lambda: self.set_status_icon(self.icons.SCAN_SCREEN))
 
                     threading.Thread(target=restore_icon, daemon=True).start()
 
