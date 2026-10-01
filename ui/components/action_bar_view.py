@@ -8,6 +8,7 @@ from ui.helpers.button_styles import get_button_config
 from ui.icon_library import Icons
 from ui.components import create_icon_button as _create_icon_btn_component
 import logging
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, GlobalApplyEvent, StartStopHuntEvent, LanguageChangedEvent
 from lib.i18n import t as i18n_t
 from lib.i18n import GLOBAL_NS as I18N_GLOBAL
@@ -162,7 +163,7 @@ class ActionBarView(tk.Frame):
         self.global_apply_btn = tk.Button(
             col2_frame,
             text=f"✓ {self._t('apply_all_settings_saved')}",
-            command=lambda: EventBus.trigger(GlobalApplyEvent()),
+            command=lambda: UIDispatcher.post(lambda: EventBus.trigger(GlobalApplyEvent())),
             padx=16,
             pady=6,
             bg=UI.ACCENT_GREEN,
@@ -182,7 +183,7 @@ class ActionBarView(tk.Frame):
             icon_size=20,
             button_size=44,
             padding={"padx": 20, "pady": 6},
-            command=lambda: EventBus.trigger(StartStopHuntEvent()),
+            command=lambda: UIDispatcher.post(lambda: EventBus.trigger(StartStopHuntEvent())),
             button_type="primary",
             bg_color=UI.ACCENT_GREEN,
             hover_color=UI.ACCENT_GREEN_BG,
@@ -202,7 +203,7 @@ class ActionBarView(tk.Frame):
         )
         self.lang_cmb["values"] = ("en", "vi")
         self.lang_cmb.pack(side="left", padx=(0, 12))
-        self.lang_cmb.bind("<<ComboboxSelected>>", lambda e: EventBus.trigger(LanguageChangedEvent(self.state_controller.get_ui_var('lang'))))
+        self.lang_cmb.bind("<<ComboboxSelected>>", lambda e: UIDispatcher.post(lambda: EventBus.trigger(LanguageChangedEvent(self.state_controller.get_ui_var('lang')))))
 
     def update_translations(self):
         """Update strings inside the Action Bar."""

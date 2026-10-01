@@ -356,16 +356,16 @@ class HotkeyController:
                 info = wm.get_window_info(fg_hwnd)
                 if info:
                     if info.pid == os.getpid():
-                        EventBus.trigger(VisionAddTemplateEvent())
+                        UIDispatcher.post(lambda: EventBus.trigger(VisionAddTemplateEvent()))
                         return
                     target_hwnd = None
                     if hasattr(self.parent, "state_controller"):
                         target_hwnd = self.parent.state_controller.get_hunt_config_value("window_hwnd")
                     if target_hwnd and info.hwnd == target_hwnd:
-                        EventBus.trigger(VisionAddTemplateEvent())
+                        UIDispatcher.post(lambda: EventBus.trigger(VisionAddTemplateEvent()))
                         return
                     return
-            EventBus.trigger(VisionAddTemplateEvent())
+            UIDispatcher.post(lambda: EventBus.trigger(VisionAddTemplateEvent()))
         UIDispatcher.post(_do)
 
     def update_diagnostics_ui_state(self) -> None:

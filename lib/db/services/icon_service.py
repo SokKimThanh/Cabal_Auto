@@ -1,6 +1,7 @@
 import sqlite3
 import logging
 from typing import List, Dict, Optional
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, IconUpdatedEvent, IconManagerSyncEvent
 from lib.managers.icon_file_manager import delete_icon_file
 
@@ -63,7 +64,7 @@ class IconService:
             self.conn.commit()
 
             # Broadcast update if UI listens to categories
-            # EventBus.trigger(IconCategorySyncEvent()) # Optional
+            # UIDispatcher.post(lambda: EventBus.trigger(IconCategorySyncEvent())) # Optional
 
             return cursor.lastrowid
         except sqlite3.Error as e:
@@ -157,7 +158,7 @@ class IconService:
                 # Lúc nạp từ file JSON, không cần thiết phải kích hoạt sync ngược, nhưng có thể cần refresh UI
                 icon_key = icon_data.get("icon_key")
                 if icon_key:
-                    EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
+                    UIDispatcher.post(lambda: EventBus.trigger(IconUpdatedEvent(icon_key=icon_key)))
 
             return True
         except sqlite3.Error as e:
@@ -240,8 +241,8 @@ class IconService:
             # Kích hoạt sự kiện để đồng bộ hóa và làm mới giao diện
             icon_key = icon_data.get("icon_key")
             if icon_key:
-                EventBus.trigger(IconManagerSyncEvent())
-                EventBus.trigger(IconUpdatedEvent(icon_key=icon_key))
+                UIDispatcher.post(lambda: EventBus.trigger(IconManagerSyncEvent()))
+                UIDispatcher.post(lambda: EventBus.trigger(IconUpdatedEvent(icon_key=icon_key)))
 
             return True
         except sqlite3.Error as e:
@@ -270,7 +271,7 @@ class IconService:
             if deleted:
                 if old_filepath:
                     self._check_and_delete_orphaned_file(old_filepath)
-                EventBus.trigger(IconManagerSyncEvent())
+                UIDispatcher.post(lambda: EventBus.trigger(IconManagerSyncEvent()))
 
             return deleted
         except ValueError as ve:

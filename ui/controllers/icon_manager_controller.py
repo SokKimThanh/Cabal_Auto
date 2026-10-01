@@ -22,6 +22,7 @@ import logging
 
 from lib.db.services.icon_service import IconService
 from lib.db.services.translation_service import TranslationService
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, TranslationDataUpdatedEvent
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ class IconManagerController:
                 ts = TranslationService()
                 ts.upsert(namespace="", key=t_key, lang="en", text=val_en)
                 ts.upsert(namespace="", key=t_key, lang="vi", text=val_vi)
-                EventBus.trigger(TranslationDataUpdatedEvent())
+                UIDispatcher.post(lambda: EventBus.trigger(TranslationDataUpdatedEvent()))
             except Exception as e:
                 logger.warning(f"Lỗi lưu bản dịch: {e}")
 

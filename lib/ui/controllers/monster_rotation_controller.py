@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import (
     EventBus, MonsterRotationUpdatedEvent, MonsterMoveUpEvent, MonsterMoveDownEvent,
     MonsterDeleteEvent, MonsterAddSmartEvent
@@ -56,7 +57,7 @@ class MonsterRotationController:
         self.state_controller.has_unsaved_changes = True
 
         # Trigger event for UI to update
-        EventBus.trigger(MonsterRotationUpdatedEvent())
+        UIDispatcher.post(lambda: EventBus.trigger(MonsterRotationUpdatedEvent()))
 
     def bind_events(self):
         EventBus.bind(MonsterMoveUpEvent, self._on_monster_move_up)
@@ -90,7 +91,7 @@ class MonsterRotationController:
             entry["priority"] = i + 1
 
         self._mark_unsaved()
-        EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=idx - 1))
+        UIDispatcher.post(lambda: EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=idx - 1)))
 
     def _on_monster_move_down(self, event: MonsterMoveDownEvent):
         idx = event.index
@@ -108,7 +109,7 @@ class MonsterRotationController:
             entry["priority"] = i + 1
 
         self._mark_unsaved()
-        EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=idx + 1))
+        UIDispatcher.post(lambda: EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=idx + 1)))
 
     def _on_monster_delete_from_list(self, event: MonsterDeleteEvent):
         selection = event.indices
@@ -135,7 +136,7 @@ class MonsterRotationController:
         if len(self.state_controller.monster_rotation) > 0:
             first_deleted = selected_indices[-1]
             new_sel = min(first_deleted, len(self.state_controller.monster_rotation) - 1)
-        EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=new_sel))
+        UIDispatcher.post(lambda: EventBus.trigger(MonsterRotationUpdatedEvent(selected_index=new_sel)))
     def _on_monster_add_smart(self, event: MonsterAddSmartEvent):
         record = event.record
         monster_id = record["monster_id"]
@@ -170,7 +171,7 @@ class MonsterRotationController:
 
         self.state_controller.monster_rotation.append(new_entry)
         self._mark_unsaved()
-        EventBus.trigger(MonsterRotationUpdatedEvent())
+        UIDispatcher.post(lambda: EventBus.trigger(MonsterRotationUpdatedEvent()))
 
     def load_monster_rotation_list(self):
         saved_list = self.state_controller.get_hunt_config_value("monster_rotation", [])
