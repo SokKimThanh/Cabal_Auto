@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from lib.db.services.translation_service import TranslationService
 from lib.db.services.translation_sync_manager import TranslationSyncManager
+from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, TranslationDataUpdatedEvent
 import logging
 
@@ -36,7 +37,7 @@ class LanguageManagerController:
                 success = False
 
         if success:
-            EventBus.trigger(TranslationDataUpdatedEvent())
+            UIDispatcher.post(lambda: EventBus.trigger(TranslationDataUpdatedEvent()))
             logger.info(f"Saved translation for {namespace}.{key}")
 
         return success
@@ -47,7 +48,7 @@ class LanguageManagerController:
         Emits TranslationDataUpdatedEvent on success.
         """
         if self.translation_service.delete_key(namespace, key):
-            EventBus.trigger(TranslationDataUpdatedEvent())
+            UIDispatcher.post(lambda: EventBus.trigger(TranslationDataUpdatedEvent()))
             logger.info(f"Deleted translation for {namespace}.{key}")
             return True
         return False
