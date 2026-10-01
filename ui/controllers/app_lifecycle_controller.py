@@ -1,3 +1,4 @@
+from lib.events.ui_dispatcher import UIDispatcher
 from tkinter import messagebox
 
 
@@ -145,7 +146,7 @@ class AppLifecycleController:
                 # Update status briefly
                 if hasattr(self.app, "hunt_status"):
                     current_status = self.app.hunt_status.get()
-                    self.app.hunt_status.set(f"✓ Game window ready: {title}")
+                    UIDispatcher.post(lambda: self.app.hunt_status.set(f"✓ Game window ready: {title}"))
                     # Restore previous status after 3 seconds
                     self.app.root.after(
                         3000, lambda: self.app.hunt_status.set(current_status)
