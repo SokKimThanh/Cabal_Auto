@@ -1,6 +1,5 @@
 from dialogs.monster_picker import MonsterPickerDialog
 from lib.ui.dialog_service import DialogService
-from lib.events.ui_dispatcher import UIDispatcher
 from lib.events.event_bus import EventBus, MonsterMoveUpEvent, MonsterMoveDownEvent, MonsterDeleteEvent, MonsterAddSmartEvent, MonsterRotationUpdatedEvent, SceneMonstersDetectedEvent
 import tkinter as tk
 from tkinter import ttk
@@ -483,7 +482,7 @@ class MonsterTargetPanel(ttk.LabelFrame):
 
     def _on_monster_add_smart(self, _evt=None):
         def on_monster_selected(record):
-            UIDispatcher.post(lambda: EventBus.trigger(MonsterAddSmartEvent(record)))
+            EventBus.trigger(MonsterAddSmartEvent(record))
 
         MonsterPickerDialog(
             self, getattr(self.app, "lang", "vi"), on_monster_selected, getattr(self.app, "_t")
@@ -493,17 +492,17 @@ class MonsterTargetPanel(ttk.LabelFrame):
     def _on_monster_move_up(self, _evt=None):
         selection = self.monster_rotation_listbox.curselection()
         if selection:
-            UIDispatcher.post(lambda: EventBus.trigger(MonsterMoveUpEvent(selection[0])))
+            EventBus.trigger(MonsterMoveUpEvent(selection[0]))
 
     def _on_monster_move_down(self, _evt=None):
         selection = self.monster_rotation_listbox.curselection()
         if selection:
-            UIDispatcher.post(lambda: EventBus.trigger(MonsterMoveDownEvent(selection[0])))
+            EventBus.trigger(MonsterMoveDownEvent(selection[0]))
 
     def _on_monster_delete_from_list(self, _evt=None):
         selection = self.monster_rotation_listbox.curselection()
         if selection:
-            UIDispatcher.post(lambda: EventBus.trigger(MonsterDeleteEvent(list(selection))))
+            EventBus.trigger(MonsterDeleteEvent(list(selection)))
 
 
     def _update_detected_monsters_list(self, event):

@@ -158,7 +158,7 @@ class IconService:
                 # Lúc nạp từ file JSON, không cần thiết phải kích hoạt sync ngược, nhưng có thể cần refresh UI
                 icon_key = icon_data.get("icon_key")
                 if icon_key:
-                    UIDispatcher.post(lambda: EventBus.trigger(IconUpdatedEvent(icon_key=icon_key)))
+                    UIDispatcher.post(lambda k=icon_key: EventBus.trigger(IconUpdatedEvent(icon_key=k)))
 
             return True
         except sqlite3.Error as e:
@@ -242,7 +242,7 @@ class IconService:
             icon_key = icon_data.get("icon_key")
             if icon_key:
                 UIDispatcher.post(lambda: EventBus.trigger(IconManagerSyncEvent()))
-                UIDispatcher.post(lambda: EventBus.trigger(IconUpdatedEvent(icon_key=icon_key)))
+                UIDispatcher.post(lambda k=icon_key: EventBus.trigger(IconUpdatedEvent(icon_key=k)))
 
             return True
         except sqlite3.Error as e:
